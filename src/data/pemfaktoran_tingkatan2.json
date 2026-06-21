@@ -1,0 +1,182 @@
+[
+  {
+    "tahun": "Tingkatan 2",
+    "topik": "Pemfaktoran Ungkapan Algebra",
+    "jenisSoalan": "subjektif",
+    "rajah": null,
+    "soalan": "Senaraikan semua faktor sepunya bagi setiap pasangan sebutan berikut.\n(a) 8y, 12y\n(b) 3w, 5w²",
+    "jawapan": "(a) 8y, 12y\n8y = 1 × 2 × 2 × 2 × y\n12y = 1 × 2 × 2 × 3 × y\nFaktor sepunya: 1, 2, 4, y, 2y, 4y\n\n(b) 3w, 5w²\n3w = 1 × 3 × w\n5w² = 1 × 5 × w × w\nFaktor sepunya: 1, w",
+    "mata": 10
+  },
+  {
+    "tahun": "Tingkatan 2",
+    "topik": "Pemfaktoran Ungkapan Algebra",
+    "jenisSoalan": "subjektif",
+    "rajah": null,
+    "soalan": "Senaraikan semua faktor sepunya bagi setiap pasangan sebutan berikut.\n(a) 2b, 3b\n(b) 6h, 4gh",
+    "jawapan": "(a) 2b, 3b\n2b = 1 × 2 × b\n3b = 1 × 3 × b\nFaktor sepunya: 1, b\n\n(b) 6h, 4gh\n6h = 1 × 2 × 3 × h\n4gh = 1 × 2 × 2 × g × h\nFaktor sepunya: 1, 2, h, 2h",
+    "mata": 10
+  },
+  {
+    "tahun": "Tingkatan 2",
+    "topik": "Pemfaktoran Ungkapan Algebra",
+    "jenisSoalan": "subjektif",
+    "rajah": null,
+    "soalan": "Senaraikan semua faktor sepunya bagi setiap kumpulan sebutan berikut.\n(a) 5bc, 2c², 3cd\n(b) 4a²b, 8b²c, 6bcd",
+    "jawapan": "(a) 5bc, 2c², 3cd\n5bc = 1 × 5 × b × c\n2c² = 1 × 2 × c × c\n3cd = 1 × 3 × c × d\nFaktor sepunya: 1, c\n\n(b) 4a²b, 8b²c, 6bcd\n4a²b = 1 × 2 × 2 × a × a × b\n8b²c = 1 × 2 × 2 × 2 × b × b × c\n6bcd = 1 × 2 × 3 × b × c × d\nFaktor sepunya: 1, 2, b, 2b",
+    "mata": 10
+  },
+  {
+    "tahun": "Tingkatan 2",
+    "topik": "Pemfaktoran Ungkapan Algebra",
+    "jenisSoalan": "subjektif",
+    "rajah": null,
+    "soalan": "Tentukan Faktor Sepunya Terbesar (FSTB) bagi setiap pasangan sebutan berikut.\n(a) 6h, 4gh\n(b) 10m², 15mk",
+    "jawapan": "(a) 6h, 4gh\n| 2 | 6h, 4gh |\n|",
+    "mata": 10
+  },
+  {
+    "tahun": "Tingkatan 2",
+    "topik": "Pemfaktoran Ungkapan Algebra",
+    "jenisSoalan": "subjektif",
+    "rajah": null,
+    "soalan": "Tentukan Faktor Sepunya Terbesar (FSTB) bagi setiap kumpulan sebutan berikut.\n(a) 5bc, 2c², 3cd\n(b) 10m², 15mk, 5m",
+    "jawapan": "(a) 5bc, 2c², 3cd\n5bc = 1 × 5 × b × c\n2c² = 1 × 2 × c × c\n3cd = 1 × 3 × c × d\nFSTB = c\n\n(b) 10m², 15mk, 5m\n| m | 10m², 15mk, 5m |\n|",
+    "mata": 10
+  },
+  {
+    "tahun": "Tingkatan 2",
+    "topik": "Pemfaktoran Ungkapan Algebra",
+    "jenisSoalan": "subjektif",
+    "rajah": null,
+    "soalan": "Faktorkan setiap ungkapan berikut.\n(a) 5e + 10\n(b) 2ab − 8a²",
+    "jawapan": "(a) 5e + 10\nFSTB = 5\n5(e + 2)\n\n(b) 2ab − 8a²\nFSTB = 2a\n2a(b − 4a)",
+    "mata": 10
+  },
+  {
+    "tahun": "Tingkatan 2",
+    "topik": "Pemfaktoran Ungkapan Algebra",
+    "jenisSoalan": "subjektif",
+    "rajah": null,
+    "soalan": "Faktorkan setiap ungkapan berikut.\n(a) 3x + 15\n(b) 7m + 21m²",
+    "jawapan": "(a) 3x + 15\nFSTB = 3\n3(x + 5)\n\n(b) 7m + 21m²\nFSTB = 7m\n7m(1 + 3m)",
+    "mata": 10
+  },
+  {
+    "tahun": "Tingkatan 2",
+    "topik": "Pemfaktoran Ungkapan Algebra",
+    "jenisSoalan": "subjektif",
+    "rajah": null,
+    "soalan": "Faktorkan setiap ungkapan berikut.\n(a) 4x − 12x²\n(b) 8y + 16y²",
+    "jawapan": "(a) 4x − 12x²\nFSTB = 4x\n4x(1 − 3x)\n\n(b) 8y + 16y²\nFSTB = 8y\n8y(1 + 2y)",
+    "mata": 10
+  },
+  {
+    "tahun": "Tingkatan 2",
+    "topik": "Pemfaktoran Ungkapan Algebra",
+    "jenisSoalan": "subjektif",
+    "rajah": null,
+    "soalan": "Faktorkan setiap ungkapan berikut.\n(a) ef + f² + fg\n(b) 2x² − 4xy + 6wx",
+    "jawapan": "(a) ef + f² + fg\nFSTB = f\nf(e + f + g)\n\n(b) 2x² − 4xy + 6wx\nFSTB = 2x\n2x(x − 2y + 3w)",
+    "mata": 10
+  },
+  {
+    "tahun": "Tingkatan 2",
+    "topik": "Pemfaktoran Ungkapan Algebra",
+    "jenisSoalan": "subjektif",
+    "rajah": null,
+    "soalan": "Faktorkan setiap ungkapan berikut.\n(a) 3abc + 6a²b\n(b) 5pq − 10p²q",
+    "jawapan": "(a) 3abc + 6a²b\nFSTB = 3ab\n3ab(c + 2a)\n\n(b) 5pq − 10p²q\nFSTB = 5pq\n5pq(1 − 2p)",
+    "mata": 10
+  },
+  {
+    "tahun": "Tingkatan 2",
+    "topik": "Pemfaktoran Ungkapan Algebra",
+    "jenisSoalan": "subjektif",
+    "rajah": null,
+    "soalan": "Faktorkan setiap ungkapan berikut.\n(a) b² − 81\n(b) x² − 1",
+    "jawapan": "(a) b² − 81\n= b² − 9²\n= (b + 9)(b − 9)\n\n(b) x² − 1\n= x² − 1²\n= (x + 1)(x − 1)",
+    "mata": 10
+  },
+  {
+    "tahun": "Tingkatan 2",
+    "topik": "Pemfaktoran Ungkapan Algebra",
+    "jenisSoalan": "subjektif",
+    "rajah": null,
+    "soalan": "Faktorkan setiap ungkapan berikut.\n(a) 9m² − 100\n(b) 16y² − 49",
+    "jawapan": "(a) 9m² − 100\n= (3m)² − 10²\n= (3m + 10)(3m − 10)\n\n(b) 16y² − 49\n= (4y)² − 7²\n= (4y + 7)(4y − 7)",
+    "mata": 10
+  },
+  {
+    "tahun": "Tingkatan 2",
+    "topik": "Pemfaktoran Ungkapan Algebra",
+    "jenisSoalan": "subjektif",
+    "rajah": null,
+    "soalan": "Faktorkan setiap ungkapan berikut.\n(a) 3y² − 147\n(b) 5k² − 80",
+    "jawapan": "(a) 3y² − 147\n= 3(y² − 49)\nFSTB = 3\n= 3(y² − 7²)\n= 3(y + 7)(y − 7)\n\n(b) 5k² − 80\n= 5(k² − 16)\nFSTB = 5\n= 5(k² − 4²)\n= 5(k + 4)(k − 4)",
+    "mata": 10
+  },
+  {
+    "tahun": "Tingkatan 2",
+    "topik": "Pemfaktoran Ungkapan Algebra",
+    "jenisSoalan": "subjektif",
+    "rajah": null,
+    "soalan": "Faktorkan setiap ungkapan berikut.\n(a) (m + 3)² − 16\n(b) (x − 2)² − 25",
+    "jawapan": "(a) (m + 3)² − 16\n= (m + 3)² − 4²\n= (m + 3 + 4)(m + 3 − 4)\n= (m + 7)(m − 1)\n\n(b) (x − 2)² − 25\n= (x − 2)² − 5²\n= (x − 2 + 5)(x − 2 − 5)\n= (x + 3)(x − 7)",
+    "mata": 10
+  },
+  {
+    "tahun": "Tingkatan 2",
+    "topik": "Pemfaktoran Ungkapan Algebra",
+    "jenisSoalan": "subjektif",
+    "rajah": null,
+    "soalan": "Faktorkan setiap ungkapan berikut.\n(a) x² + 9x + 14\n(b) x² − 5x − 24",
+    "jawapan": "(a) x² + 9x + 14\nCari dua nombor yang:\nHasil darab = 14, Hasil tambah = 9\n2 × 7 = 14, 2 + 7 = 9\n= (x + 2)(x + 7)\n\n(b) x² − 5x − 24\nCari dua nombor yang:\nHasil darab = −24, Hasil tambah = −5\n3 × (−8) = −24, 3 + (−8) = −5\n= (x + 3)(x − 8)",
+    "mata": 10
+  },
+  {
+    "tahun": "Tingkatan 2",
+    "topik": "Pemfaktoran Ungkapan Algebra",
+    "jenisSoalan": "subjektif",
+    "rajah": null,
+    "soalan": "Faktorkan setiap ungkapan berikut.\n(a) x² − 6x + 9\n(b) m² − 2m − 8",
+    "jawapan": "(a) x² − 6x + 9\nCari dua nombor yang:\nHasil darab = 9, Hasil tambah = −6\n(−3) × (−3) = 9, (−3) + (−3) = −6\n= (x − 3)(x − 3)\n= (x − 3)²\n\n(b) m² − 2m − 8\nCari dua nombor yang:\nHasil darab = −8, Hasil tambah = −2\n2 × (−4) = −8, 2 + (−4) = −2\n= (m + 2)(m − 4)",
+    "mata": 10
+  },
+  {
+    "tahun": "Tingkatan 2",
+    "topik": "Pemfaktoran Ungkapan Algebra",
+    "jenisSoalan": "subjektif",
+    "rajah": null,
+    "soalan": "Faktorkan setiap ungkapan berikut.\n(a) x² + 7x − 18\n(b) y² − 2y − 15",
+    "jawapan": "(a) x² + 7x − 18\nCari dua nombor yang:\nHasil darab = −18, Hasil tambah = 7\n9 × (−2) = −18, 9 + (−2) = 7\n= (x + 9)(x − 2)\n\n(b) y² − 2y − 15\nCari dua nombor yang:\nHasil darab = −15, Hasil tambah = −2\n3 × (−5) = −15, 3 + (−5) = −2\n= (y + 3)(y − 5)",
+    "mata": 10
+  },
+  {
+    "tahun": "Tingkatan 2",
+    "topik": "Pemfaktoran Ungkapan Algebra",
+    "jenisSoalan": "subjektif",
+    "rajah": null,
+    "soalan": "Faktorkan setiap ungkapan berikut.\n(a) m² + 11m − 26\n(b) k² − 8k + 16",
+    "jawapan": "(a) m² + 11m − 26\nCari dua nombor yang:\nHasil darab = −26, Hasil tambah = 11\n13 × (−2) = −26, 13 + (−2) = 11\n= (m + 13)(m − 2)\n\n(b) k² − 8k + 16\nCari dua nombor yang:\nHasil darab = 16, Hasil tambah = −8\n(−4) × (−4) = 16, (−4) + (−4) = −8\n= (k − 4)(k − 4)\n= (k − 4)²",
+    "mata": 10
+  },
+  {
+    "tahun": "Tingkatan 2",
+    "topik": "Pemfaktoran Ungkapan Algebra",
+    "jenisSoalan": "subjektif",
+    "rajah": null,
+    "soalan": "Faktorkan setiap ungkapan berikut dengan mengumpul sebutan.\n(a) pq − qr − pw + rw\n(b) x² + xy + 6x + 6y",
+    "jawapan": "(a) pq − qr − pw + rw\n= (pq − qr) − (pw − rw)\n= q(p − r) − w(p − r)\n= (q − w)(p − r)\n\n(b) x² + xy + 6x + 6y\n= (x² + xy) + (6x + 6y)\n= x(x + y) + 6(x + y)\n= (x + 6)(x + y)",
+    "mata": 10
+  },
+  {
+    "tahun": "Tingkatan 2",
+    "topik": "Pemfaktoran Ungkapan Algebra",
+    "jenisSoalan": "subjektif",
+    "rajah": null,
+    "soalan": "Faktorkan setiap ungkapan berikut.\n(a) 4(x − 1)² − 9\n(b) 9f² − 12f + 4",
+    "jawapan": "(a) 4(x − 1)² − 9\n= [2(x − 1)]² − 3²\n= [2(x − 1) + 3][2(x − 1) − 3]\n= (2x − 2 + 3)(2x − 2 − 3)\n= (2x + 1)(2x − 5)\n\n(b) 9f² − 12f + 4\n= (3f)² − 2(3f)(2) + 2²\n= (3f − 2)²",
+    "mata": 10
+  }
+]
