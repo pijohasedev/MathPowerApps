@@ -2260,18 +2260,18 @@ function ParentDashboard() {
               {/* AI Settings */}
               <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
                 <h3 className="mb-4">Integrasi AI (Semakan Automatik)</h3>
-                <p className="text-muted text-sm mb-6">Masukkan kunci API Google Gemini untuk membolehkan AI menyemak jawapan subjektif secara automatik.</p>
+                <p className="text-muted text-sm mb-6">Masukkan kunci API untuk membolehkan AI menyemak jawapan subjektif secara automatik.</p>
                 
                 <div className="input-group">
-                  <label className="input-label">Gemini API Key</label>
+                  <label className="input-label">AI API Key</label>
                   <input 
                     type="password" 
                     className="input-field" 
                     value={geminiApiKey} 
                     onChange={(e) => setGeminiApiKey(e.target.value)} 
-                    placeholder="AIzaSy..."
+                    placeholder="sk-or-... atau AIzaSy..."
                   />
-                  <p className="text-xs text-muted mt-1">Dapatkan dari <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" className="text-indigo-600 underline">Google AI Studio</a></p>
+                  <p className="text-xs text-muted mt-1">Masukkan API Key dari pembekal pilihan anda.</p>
                 </div>
                 
                 {aiSaveStatus && (
