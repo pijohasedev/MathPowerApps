@@ -16,6 +16,8 @@ function ParentDashboard() {
   const [activeTab, setActiveTab] = useState('overview');
   const [filterUnverified, setFilterUnverified] = useState(false);
   const [filterAnswered, setFilterAnswered] = useState(false);
+  const [filterTopik, setFilterTopik] = useState('Semua Topik');
+  const [filterAras, setFilterAras] = useState('Semua Aras');
   
   // Auth State
   const [isParentAuthenticated, setIsParentAuthenticated] = useState(false);
@@ -1943,6 +1945,28 @@ function ParentDashboard() {
                     </button>
                   </>
                 )}
+                <select 
+                  className="input-field mb-0 py-2 border-gray-300 focus:border-indigo-500"
+                  value={filterTopik}
+                  onChange={(e) => setFilterTopik(e.target.value)}
+                  style={{ minWidth: '150px' }}
+                >
+                  <option value="Semua Topik">Semua Topik</option>
+                  {[...new Set(questionsList.map(q => q.topik).filter(Boolean))].map(t => (
+                    <option key={t} value={t}>{t}</option>
+                  ))}
+                </select>
+                <select 
+                  className="input-field mb-0 py-2 border-gray-300 focus:border-indigo-500"
+                  value={filterAras}
+                  onChange={(e) => setFilterAras(e.target.value)}
+                  style={{ minWidth: '130px' }}
+                >
+                  <option value="Semua Aras">Semua Aras</option>
+                  <option value="Senang">Senang</option>
+                  <option value="Sederhana">Sederhana</option>
+                  <option value="Sukar">Sukar</option>
+                </select>
                 <input 
                   type="text" 
                   className="input-field max-w-xs mb-0 py-2 border-gray-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500" 
@@ -1994,7 +2018,10 @@ function ParentDashboard() {
                       const isAnsweredByAny = profiles.some(p => p.answeredQuestions?.includes(q.id));
                       const matchesAnswered = filterAnswered ? isAnsweredByAny : true;
                       
-                      return matchesSearch && matchesVerified && matchesAnswered;
+                      const matchesTopik = filterTopik === 'Semua Topik' ? true : q.topik === filterTopik;
+                      const matchesAras = filterAras === 'Semua Aras' ? true : q.aras === filterAras;
+                      
+                      return matchesSearch && matchesVerified && matchesAnswered && matchesTopik && matchesAras;
                     });
 
                     if (filteredQuestions.length === 0) {

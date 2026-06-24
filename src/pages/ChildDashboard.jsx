@@ -631,8 +631,8 @@ function ChildDashboard() {
                           }}
                           className="topic-card"
                         >
-                          <div>
-                            <h3 className="text-lg text-gray-800 mb-1">{topic}</h3>
+                          <div className="topic-card-content">
+                            <h3 title={topic}>{topic}</h3>
                             <p className="text-sm text-muted m-0">{topicQuestions.length} Soalan Belum Dijawab</p>
                           </div>
                           <div className="topic-icon-wrapper">
