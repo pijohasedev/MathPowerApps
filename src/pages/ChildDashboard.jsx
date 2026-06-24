@@ -193,7 +193,7 @@ function ChildDashboard() {
            userAnswer: finalAnswer,
            aiFeedback: "Jawapan tepat sepenuhnya. (Disemak secara automatik)",
            aiScore: 10,
-           needsManualReview: false,
+           needsManualReview: true,
            questionMata: currentQ.mata
          };
        } else {
@@ -214,9 +214,23 @@ function ChildDashboard() {
              };
            } else {
              isCorrect = false;
+             extraLogData = {
+               userAnswer: finalAnswer,
+               aiFeedback: "Gagal memanggil AI. Sila semak secara manual.",
+               aiScore: 0,
+               needsManualReview: true,
+               questionMata: currentQ.mata
+             };
            }
          } else {
            isCorrect = false;
+           extraLogData = {
+             userAnswer: finalAnswer,
+             aiFeedback: "AI tidak diaktifkan. Sila semak secara manual.",
+             aiScore: 0,
+             needsManualReview: true,
+             questionMata: currentQ.mata
+           };
          }
        }
     } else {
