@@ -12,6 +12,9 @@ const normalizeAnswer = (ans) => {
   if (!ans) return "";
   let s = String(ans).toLowerCase();
   
+  // Buang unit RM (Ringgit Malaysia)
+  s = s.replace(/rm/g, '');
+  
   // Buang tanda dolar (LaTeX)
   s = s.replace(/\$/g, '');
   // Tukar pecahan LaTeX \frac{A}{B} kepada A/B
@@ -180,29 +183,41 @@ function ChildDashboard() {
        const expectedAnswers = (currentQ.jawapan || '').split(',').map(s => s.trim());
        isCorrect = JSON.stringify(userAnswers.map(normalizeAnswer)) === JSON.stringify(expectedAnswers.map(normalizeAnswer));
     } else if (currentQ.jenisSoalan === 'subjektif' || !currentQ.jenisSoalan) {
-       const settings = await getAiSettings();
-       const apiKey = settings?.apiKey;
+       const normalizedChild = normalizeAnswer(finalAnswer);
+       const normalizedParent = normalizeAnswer(currentQ.jawapan);
        
-       if (apiKey) {
-         setFeedback({ isLoading: true, message: 'AI sedang menyemak jawapan anda... 🤖' });
-         const aiResult = await evaluateWithGemini(currentQ.soalan, finalAnswer, currentQ.jawapan, apiKey);
-         if (aiResult) {
-           isCorrect = aiResult.isCorrect;
-           extraLogData = { 
-             userAnswer: finalAnswer, 
-             aiFeedback: aiResult.feedback, 
-             aiScore: aiResult.score, 
-             needsManualReview: true 
-           };
-         } else {
-           const normalizedChild = normalizeAnswer(finalAnswer);
-           const normalizedParent = normalizeAnswer(currentQ.jawapan);
-           isCorrect = (normalizedChild === normalizedParent);
-         }
+       if (normalizedChild === normalizedParent) {
+         // Padanan tepat selepas normalisasi (buang RM, jarak, dll)
+         isCorrect = true;
+         extraLogData = {
+           userAnswer: finalAnswer,
+           aiFeedback: "Jawapan tepat sepenuhnya. (Disemak secara automatik)",
+           aiScore: 10,
+           needsManualReview: false,
+           questionMata: currentQ.mata
+         };
        } else {
-         const normalizedChild = normalizeAnswer(finalAnswer);
-         const normalizedParent = normalizeAnswer(currentQ.jawapan);
-         isCorrect = (normalizedChild === normalizedParent);
+         const settings = await getAiSettings();
+         const apiKey = settings?.apiKey;
+         
+         if (apiKey) {
+           setFeedback({ isLoading: true, message: 'AI sedang menyemak jawapan anda... 🤖' });
+           const aiResult = await evaluateWithGemini(currentQ.soalan, finalAnswer, currentQ.jawapan, apiKey);
+           if (aiResult) {
+             isCorrect = aiResult.isCorrect;
+             extraLogData = { 
+               userAnswer: finalAnswer, 
+               aiFeedback: aiResult.feedback, 
+               aiScore: aiResult.score, 
+               needsManualReview: true,
+               questionMata: currentQ.mata
+             };
+           } else {
+             isCorrect = false;
+           }
+         } else {
+           isCorrect = false;
+         }
        }
     } else {
        const normalizedChild = normalizeAnswer(finalAnswer);
@@ -217,9 +232,7 @@ function ChildDashboard() {
       const result = await updatePoints(currentChild.id, currentQ.mata, currentQ.id);
       setCurrentChild({ ...currentChild, points: result.newPoints, answeredQuestions: result.answeredQuestions });
       
-      const successMsg = extraLogData.aiFeedback 
-        ? `AI: ${extraLogData.aiFeedback} (Skor: ${extraLogData.aiScore}/10) 🎉` 
-        : `Tahniah ${currentChild.name}! Anda dapat ${currentQ.mata} mata! 🎉`;
+      const successMsg = `Tahniah ${currentChild.name}! Anda dapat ${currentQ.mata} mata! 🎉`;
       setFeedback({ isCorrect: true, message: successMsg });
       
       confetti({

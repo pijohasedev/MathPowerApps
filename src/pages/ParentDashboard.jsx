@@ -224,10 +224,17 @@ function ParentDashboard() {
     
     const success = await updateReviewStatus(logId, isCorrect, overrideScore);
     if (success) {
-      if (isCorrect && overrideScore > 0) {
+      // Periksa jika keputusan berbeza dengan keputusan asal AI
+      if (isCorrect && !log.isCorrect && overrideScore > 0) {
+        // AI kata salah, tapi ibu bapa kata betul -> Tambah mata
         await updatePoints(log.childId, overrideScore, log.questionId);
-        loadProfiles(); 
+      } else if (!isCorrect && log.isCorrect) {
+        // AI kata betul, tapi ibu bapa kata salah -> Tolak mata yang dah diberi
+        await updatePoints(log.childId, -(log.questionMata || 10));
       }
+      // Jika isCorrect === log.isCorrect, mata sudah pun diberi/tidak diberi semasa anak menjawab, jadi abaikan.
+      
+      loadProfiles(); 
       setPendingReviews(pendingReviews.filter(r => r.id !== logId));
     }
   };
@@ -922,15 +929,15 @@ function ParentDashboard() {
                       <div className="flex flex-wrap gap-3 mt-2">
                         <button 
                           className="btn btn-primary"
-                          onClick={() => handleReviewAction(log.id, true, 10)}
+                          onClick={() => handleReviewAction(log.id, true, log.questionMata || 10)}
                         >
-                          Tandakan Betul (10 Markah)
+                          Tandakan Betul ({log.questionMata || 10} Markah)
                         </button>
                         <button 
                           className="btn bg-green-500 hover:bg-green-600 text-white"
-                          onClick={() => handleReviewAction(log.id, true, log.aiScore || 5)}
+                          onClick={() => handleReviewAction(log.id, true, log.questionMata || 10)}
                         >
-                          Terima Keputusan AI ({log.aiScore || 5} Markah)
+                          Terima Keputusan AI ({log.questionMata || 10} Markah)
                         </button>
                         <button 
                           className="btn bg-red-500 hover:bg-red-600 text-white ml-auto"

@@ -496,6 +496,7 @@ Skema Jawapan: ${answerKey}
 Jawapan Pelajar: ${studentAnswer}
 
 Bandingkan jawapan pelajar dengan skema. Fokus kepada pemahaman konsep dan jalan kerja, bukan sekadar format. Jika maknanya sama, anggap ia betul.
+SANGAT PENTING: Sila abaikan ketiadaan unit mata wang seperti 'RM' atau simbol unit lain, dan abaikan jarak (spaces). Jika nilai angka jawapan pelajar sama dengan nilai angka skema jawapan, anda wajib menetapkan isCorrect kepada true dan memberi markah penuh.
 Sila berikan maklum balas ringkas dalam bahasa Melayu dan nilai sama ada ia betul (isCorrect: true/false) dan markah (score: 0-10).
 Sila balas HANYA dalam format JSON yang sah seperti ini (tiada teks lain):
 {
