@@ -626,7 +626,6 @@ function ChildDashboard() {
                           key={topic}
                           onClick={() => {
                             setSelectedTopic(topic);
-                            setCurrentQuestionIndex(0);
                             setUserAnswer('');
                             setFeedback(null);
                           }}

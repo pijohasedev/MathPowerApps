@@ -505,30 +505,54 @@ Sila balas HANYA dalam format JSON yang sah seperti ini (tiada teks lain):
   "feedback": "Jawapan tepat dan jalan kerja jelas."
 }`;
 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
+    let url, headers, body;
+    const isOpenRouter = apiKey.startsWith("sk-or-");
+
+    if (isOpenRouter) {
+      url = "https://openrouter.ai/api/v1/chat/completions";
+      headers = {
+        "Authorization": `Bearer ${apiKey}`,
+        "Content-Type": "application/json"
+      };
+      body = JSON.stringify({
+        model: "google/gemini-2.5-flash", // We can use 2.5-flash on OpenRouter!
+        messages: [{ role: "user", content: prompt }]
+      });
+    } else {
+      // Fallback for direct Google Gemini API Key
+      url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+      headers = { "Content-Type": "application/json" };
+      body = JSON.stringify({
         contents: [{ parts: [{ text: prompt }] }],
         generationConfig: { temperature: 0.1, responseMimeType: "application/json" }
-      })
+      });
+    }
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers,
+      body
     });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      console.error("Gemini API Error:", errorData);
+      console.error("AI API Error:", errorData);
       throw new Error(`API Error: ${response.status} - ${errorData?.error?.message || 'Unknown Error'}`);
     }
 
     const data = await response.json();
-    let textResult = data.candidates[0].content.parts[0].text;
+    let textResult = "";
+    if (isOpenRouter) {
+      textResult = data.choices[0].message.content;
+    } else {
+      textResult = data.candidates[0].content.parts[0].text;
+    }
     
     textResult = textResult.replace(/```json/g, '').replace(/```/g, '').trim();
     
     return JSON.parse(textResult);
   } catch (error) {
-    console.error("Error evaluating with Gemini:", error);
+    console.error("Error evaluating with AI:", error);
     return null;
   }
 };
