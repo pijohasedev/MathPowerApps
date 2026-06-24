@@ -515,7 +515,7 @@ Sila balas HANYA dalam format JSON yang sah seperti ini (tiada teks lain):
         "Content-Type": "application/json"
       };
       body = JSON.stringify({
-        model: "google/gemini-2.5-flash", // We can use 2.5-flash on OpenRouter!
+        model: "google/gemini-3.5-flash", 
         messages: [{ role: "user", content: prompt }]
       });
     } else {
