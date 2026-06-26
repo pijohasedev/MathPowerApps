@@ -480,7 +480,7 @@ export const getAiSettings = async () => {
 export const updateAiSettings = async (apiKey) => {
   try {
     const docRef = doc(db, "settings", "ai");
-    await setDoc(docRef, { apiKey }, { merge: true });
+    await setDoc(docRef, { apiKey: apiKey.trim() }, { merge: true });
     return true;
   } catch (error) {
     console.error("Error updating AI settings: ", error);
@@ -509,12 +509,13 @@ Sila balas HANYA dalam format JSON yang sah seperti ini (tiada teks lain):
 }`;
 
     let url, headers, body;
-    const isOpenRouter = apiKey.startsWith("sk-or-");
+    const cleanApiKey = apiKey.trim();
+    const isOpenRouter = cleanApiKey.startsWith("sk-or-");
 
     if (isOpenRouter) {
       url = "https://openrouter.ai/api/v1/chat/completions";
       headers = {
-        "Authorization": `Bearer ${apiKey}`,
+        "Authorization": `Bearer ${cleanApiKey}`,
         "Content-Type": "application/json"
       };
       body = JSON.stringify({
@@ -523,7 +524,7 @@ Sila balas HANYA dalam format JSON yang sah seperti ini (tiada teks lain):
       });
     } else {
       // Fallback for direct Google Gemini API Key
-      url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+      url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${cleanApiKey}`;
       headers = { "Content-Type": "application/json" };
       body = JSON.stringify({
         contents: [{ parts: [{ text: prompt }] }],
