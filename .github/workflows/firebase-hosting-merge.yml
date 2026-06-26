@@ -10,7 +10,6 @@ on:
 concurrency:
   group: firebase-live-deploy
   cancel-in-progress: false
-
 jobs:
   build_and_deploy:
     runs-on: ubuntu-latest
@@ -23,4 +22,3 @@ jobs:
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_MATHPOWERAPPS }}
           channelId: live
           projectId: mathpowerapps
-          firebaseToolsVersion: 14.20.0

@@ -19,4 +19,3 @@ jobs:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_MATHPOWERAPPS }}
           projectId: mathpowerapps
-          firebaseToolsVersion: 14.20.0
