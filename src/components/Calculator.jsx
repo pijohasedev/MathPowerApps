@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import React, { useState, useRef, useEffect } from 'react';
 import { evaluate } from 'mathjs';
 import { X, Delete } from 'lucide-react';

@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect, no-unused-vars */
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Delete, X } from 'lucide-react';

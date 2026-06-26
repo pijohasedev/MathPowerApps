@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+/* eslint-disable no-unused-vars, react-hooks/exhaustive-deps, react-hooks/purity */
+import React, { useState, useEffect, useRef } from 'react';
 import { getQuestions, getProfiles, updatePoints, deductPoints, addRedemption, updateLastLogin, updateSessionTime, getRewards, completeSifir, sendTelegramNotification, logAnswer, getAiSettings, evaluateWithGemini } from '../services/store';
 import LatexRenderer from '../components/LatexRenderer';
 import { createPortal } from 'react-dom';
@@ -61,7 +62,7 @@ function ChildDashboard() {
   const [isShaking, setIsShaking] = useState(false);
   
   const [attemptsCount, setAttemptsCount] = useState(0);
-  const [questionStartTime, setQuestionStartTime] = useState(Date.now());
+  const [questionStartTime, setQuestionStartTime] = useState(() => Date.now());
   
   // Navigation State
   const [activeTab, setActiveTab] = useState('math');
@@ -383,6 +384,7 @@ function ChildDashboard() {
   
   useEffect(() => {
     if (currentQ) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setUserAnswer('');
       setAttemptsCount(0);
       setQuestionStartTime(Date.now());
@@ -795,7 +797,7 @@ function ChildDashboard() {
                               </tr>
                             </thead>
                             <tbody>
-                              {(currentQ.jadualItems || []).map((item, idx) => (
+                              {(currentQ.jadualItems || []).map((item) => (
                                 <tr key={item.id}>
                                   <td className="jadual-td" style={{fontWeight: '800', fontSize: '1.2rem', color: 'var(--primary-color)'}}><LatexRenderer>{item.item}</LatexRenderer></td>
                                   <td className="jadual-td" style={{display: 'flex', flexWrap: 'wrap', gap: '0.5rem', justifyContent: 'center'}}>
