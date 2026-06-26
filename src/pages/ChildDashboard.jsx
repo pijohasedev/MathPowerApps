@@ -647,7 +647,7 @@ function ChildDashboard() {
                 )}
               </>
             ) : (
-              <div className="bg-gray-50 p-6 md:p-8 rounded-2xl border border-gray-200">
+              <div className="bg-gray-50 p-6 md:p-8 rounded-2xl border border-gray-200" style={{ position: 'relative', paddingBottom: '3.5rem' }}>
                 <div className="grid grid-cols-3 items-center mb-6">
                   <div className="justify-self-start">
                     <button className="btn btn-outline py-1 px-3 flex items-center gap-2 text-sm" onClick={() => { handleReturnToTopics(); setShowSymbols(false); }}>
@@ -957,6 +957,12 @@ function ChildDashboard() {
                         {feedback.message}
                       </div>
                     )}
+                  </div>
+                )}
+                
+                {currentQ?.kodSoalan && (
+                  <div style={{ position: 'absolute', bottom: '5px', right: '15px', fontSize: '0.75rem', color: '#888', fontStyle: 'italic', fontFamily: 'monospace', userSelect: 'all' }} title="Kod Soalan (Klik 2 kali untuk salin)">
+                    {currentQ.kodSoalan}
                   </div>
                 )}
               </div>
