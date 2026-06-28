@@ -1,5 +1,6 @@
 import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, getDoc, query, orderBy, setDoc } from "firebase/firestore"; 
-import { db } from "./firebase";
+import { db, app } from "./firebase";
+import { getFunctions, httpsCallable } from "firebase/functions";
 
 // --- QUESTIONS ---
 export const getQuestions = async () => {
@@ -514,43 +515,51 @@ Sila balas HANYA dalam format JSON yang sah seperti ini (tiada teks lain):
     const isGoogle = cleanApiKey.startsWith("AIzaSy");
     const isOpenCodeGo = !isOpenRouter && !isGoogle;
 
-    if (isOpenRouter || isOpenCodeGo) {
-      url = isOpenRouter 
-        ? "https://openrouter.ai/api/v1/chat/completions"
-        : "https://corsproxy.io/?" + encodeURIComponent("https://opencode.ai/zen/go/v1/chat/completions");
-        
-      headers = {
-        "Authorization": `Bearer ${cleanApiKey}`,
-        "Content-Type": "application/json"
-      };
-      
-      body = JSON.stringify({
-        model: isOpenRouter ? "google/gemini-1.5-flash" : "deepseek-v4-flash", 
-        messages: [{ role: "user", content: prompt }]
-      });
+    let data;
+
+    if (isOpenCodeGo) {
+      // Call Firebase Cloud Function Proxy
+      const functions = getFunctions(app);
+      const proxyOpenCodeGo = httpsCallable(functions, 'proxyOpenCodeGo');
+      const result = await proxyOpenCodeGo({ prompt, apiKey: cleanApiKey });
+      data = result.data;
     } else {
-      // Fallback for direct Google Gemini API Key
-      url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${cleanApiKey}`;
-      headers = { "Content-Type": "application/json" };
-      body = JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.1, responseMimeType: "application/json" }
+      // Direct API Calls
+      if (isOpenRouter) {
+        url = "https://openrouter.ai/api/v1/chat/completions";
+        headers = {
+          "Authorization": `Bearer ${cleanApiKey}`,
+          "Content-Type": "application/json"
+        };
+        body = JSON.stringify({
+          model: "google/gemini-1.5-flash", 
+          messages: [{ role: "user", content: prompt }]
+        });
+      } else {
+        // Fallback for direct Google Gemini API Key
+        url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${cleanApiKey}`;
+        headers = { "Content-Type": "application/json" };
+        body = JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { temperature: 0.1, responseMimeType: "application/json" }
+        });
+      }
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers,
+        body
       });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error("AI API Error:", errorData);
+        throw new Error(`API Error: ${response.status} - ${errorData?.error?.message || 'Unknown Error'}`);
+      }
+
+      data = await response.json();
     }
 
-    const response = await fetch(url, {
-      method: 'POST',
-      headers,
-      body
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      console.error("AI API Error:", errorData);
-      throw new Error(`API Error: ${response.status} - ${errorData?.error?.message || 'Unknown Error'}`);
-    }
-
-    const data = await response.json();
     let textResult = "";
     if (isOpenRouter || isOpenCodeGo) {
       textResult = data.choices[0].message.content;
