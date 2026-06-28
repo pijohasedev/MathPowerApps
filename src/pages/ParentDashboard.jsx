@@ -217,7 +217,7 @@ function ParentDashboard() {
   const handleSaveAiSettings = async () => {
     const success = await updateAiSettings(geminiApiKey);
     if (success) {
-      setAiSaveStatus({ type: 'success', msg: 'Kekunci API Gemini berjaya disimpan!' });
+      setAiSaveStatus({ type: 'success', msg: 'Kunci API AI berjaya disimpan!' });
       setTimeout(() => setAiSaveStatus(null), 3000);
     } else {
       setAiSaveStatus({ type: 'error', msg: 'Gagal menyimpan kekunci API.' });

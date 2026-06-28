@@ -511,20 +511,26 @@ Sila balas HANYA dalam format JSON yang sah seperti ini (tiada teks lain):
     let url, headers, body;
     const cleanApiKey = apiKey.trim();
     const isOpenRouter = cleanApiKey.startsWith("sk-or-");
+    const isGoogle = cleanApiKey.startsWith("AIzaSy");
+    const isOpenCodeGo = !isOpenRouter && !isGoogle;
 
-    if (isOpenRouter) {
-      url = "https://openrouter.ai/api/v1/chat/completions";
+    if (isOpenRouter || isOpenCodeGo) {
+      url = isOpenRouter 
+        ? "https://openrouter.ai/api/v1/chat/completions"
+        : "https://corsproxy.io/?" + encodeURIComponent("https://opencode.ai/zen/go/v1/chat/completions");
+        
       headers = {
         "Authorization": `Bearer ${cleanApiKey}`,
         "Content-Type": "application/json"
       };
+      
       body = JSON.stringify({
-        model: "google/gemini-3.5-flash", 
+        model: isOpenRouter ? "google/gemini-1.5-flash" : "deepseek-v4-flash", 
         messages: [{ role: "user", content: prompt }]
       });
     } else {
       // Fallback for direct Google Gemini API Key
-      url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${cleanApiKey}`;
+      url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${cleanApiKey}`;
       headers = { "Content-Type": "application/json" };
       body = JSON.stringify({
         contents: [{ parts: [{ text: prompt }] }],
@@ -546,7 +552,7 @@ Sila balas HANYA dalam format JSON yang sah seperti ini (tiada teks lain):
 
     const data = await response.json();
     let textResult = "";
-    if (isOpenRouter) {
+    if (isOpenRouter || isOpenCodeGo) {
       textResult = data.choices[0].message.content;
     } else {
       textResult = data.candidates[0].content.parts[0].text;
@@ -557,6 +563,12 @@ Sila balas HANYA dalam format JSON yang sah seperti ini (tiada teks lain):
     return JSON.parse(textResult);
   } catch (error) {
     console.error("Error evaluating with AI:", error);
+    if (error.message && error.message.includes("429")) {
+      return { isCorrect: false, score: 0, feedback: "Sistem AI sedang sibuk atau mencapai had kuota (Rate Limit). Sila tunggu sebentar sebelum mencuba lagi." };
+    }
+    if (error.message && (error.message.includes("403") || error.message.includes("401") || error.message.includes("400"))) {
+      return { isCorrect: false, score: 0, feedback: "Kunci API (API Key) AI tidak sah, tamat tempoh, atau model tidak disokong." };
+    }
     return null;
   }
 };
