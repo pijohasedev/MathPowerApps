@@ -322,7 +322,7 @@ function ChildDashboard() {
     const currentQ = sifirQuestions[sifirIndex];
     if (parseInt(finalAnswer) === currentQ.answer) {
       if (sifirIndex === sifirQuestions.length - 1) {
-        const points = selectedSifir <= 5 ? 2 : 5;
+        const points = 2;
         const res = await completeSifir(currentChild.id, selectedSifir, points);
         if (res) {
            setCurrentChild({ ...currentChild, points: res.newPoints, dailySifir: res.dailySifir });
@@ -537,7 +537,7 @@ function ChildDashboard() {
                 <div className="sifir-grid">
                   {[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(num => {
                     const isDone = completedSifirs.includes(num);
-                    const pts = num <= 5 ? 2 : 5;
+                    const pts = 2;
                     return (
                       <button 
                         key={num}
