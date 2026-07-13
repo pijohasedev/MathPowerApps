@@ -561,7 +561,7 @@ function ChildDashboard() {
                 </div>
               </>
             ) : (
-              <div className={`text-center max-w-2xl mx-auto transition-all ${isShaking ? 'shake-animation' : ''}`}>
+              <div className={`text-center max-w-2xl mx-auto transition-all ${isShaking ? 'shake-animation' : ''} select-none`} style={{ userSelect: 'none' }} onCopy={(e) => e.preventDefault()}>
                 <div className="flex justify-between items-center mb-8">
                   <button className="btn btn-outline py-1 px-3 flex items-center gap-2 text-sm" onClick={() => setSelectedSifir(null)}>
                     <ChevronLeft size={16} /> Kembali
@@ -669,7 +669,7 @@ function ChildDashboard() {
                     </div>
                   </div>
                 ) : (
-                  <div className={`animate-fade-in text-center max-w-2xl mx-auto transition-all ${isShaking ? 'shake-animation' : ''}`}>
+                  <div className={`animate-fade-in text-center max-w-2xl mx-auto transition-all ${isShaking ? 'shake-animation' : ''} select-none`} style={{ userSelect: 'none' }} onCopy={(e) => e.preventDefault()}>
                     <span className="inline-block bg-indigo-100 text-indigo-800 text-xs font-extrabold px-3 py-1 rounded-full uppercase tracking-wider mb-4">
                       Baki Soalan: {mathQuestions.length}
                     </span>
