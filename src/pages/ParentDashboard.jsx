@@ -27,6 +27,9 @@ function ParentDashboard() {
   // Telegram Settings State
   const [telegramToken, setTelegramToken] = useState('');
   const [telegramChatId, setTelegramChatId] = useState('');
+  const [notifyRedeem, setNotifyRedeem] = useState(true);
+  const [notifySifirAll, setNotifySifirAll] = useState(true);
+  const [notifyLatihanAsas, setNotifyLatihanAsas] = useState(true);
   const [telegramTestStatus, setTelegramTestStatus] = useState(null);
   
   // AI Settings State
@@ -184,6 +187,9 @@ function ParentDashboard() {
     const settings = await getTelegramSettings();
     setTelegramToken(settings.token || '');
     setTelegramChatId(settings.chatId || '');
+    setNotifyRedeem(settings.notifyRedeem !== false);
+    setNotifySifirAll(settings.notifySifirAll !== false);
+    setNotifyLatihanAsas(settings.notifyLatihanAsas !== false);
   };
   const loadAiSettings = async () => {
     const settings = await getAiSettings();
@@ -205,7 +211,11 @@ function ParentDashboard() {
   }, [activeTab]);
 
   const handleSaveTelegram = async () => {
-    const success = await updateTelegramSettings(telegramToken, telegramChatId);
+    const success = await updateTelegramSettings(telegramToken, telegramChatId, {
+      notifyRedeem,
+      notifySifirAll,
+      notifyLatihanAsas
+    });
     if (success) {
       setTelegramTestStatus({ type: 'success', msg: 'Tetapan Telegram berjaya disimpan!' });
       setTimeout(() => setTelegramTestStatus(null), 3000);
@@ -2266,7 +2276,7 @@ function ParentDashboard() {
                   <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" className="text-blue-500"><path d="M21.5 2L2 11.5l6.5 2.5L20 4.5 10 14.5l8 6L21.5 2z"></path></svg>
                   Notifikasi Telegram
                 </h3>
-                <p className="text-muted text-sm mb-6">Terima mesej automatik apabila anak menebus hadiah.</p>
+                <p className="text-muted text-sm mb-6">Terima mesej automatik apabila anak menebus hadiah, menamatkan semua Sifir 2–12, atau menyelesaikan Latihan Asas Matematik Harian.</p>
                 
                 <div className="input-group">
                   <label className="input-label">Bot Token</label>
@@ -2289,6 +2299,42 @@ function ParentDashboard() {
                     placeholder="Contoh: 123456789"
                   />
                   <p className="text-xs text-muted mt-1">Anda boleh dapatkan Chat ID dari bot @userinfobot</p>
+                </div>
+
+                {/* Jenis Notifikasi Pilihan */}
+                <div className="mb-6 p-4 bg-gray-50 rounded-xl border border-gray-200">
+                  <label className="block text-sm font-bold text-gray-700 mb-3">Pilihan Notifikasi Automatik:</label>
+                  <div className="space-y-3">
+                    <label className="flex items-center gap-3 cursor-pointer select-none">
+                      <input 
+                        type="checkbox" 
+                        checked={notifyRedeem} 
+                        onChange={(e) => setNotifyRedeem(e.target.checked)}
+                        className="w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500 cursor-pointer"
+                      />
+                      <span className="text-sm text-gray-700 font-medium">🎁 Penebusan Hadiah</span>
+                    </label>
+
+                    <label className="flex items-center gap-3 cursor-pointer select-none">
+                      <input 
+                        type="checkbox" 
+                        checked={notifySifirAll} 
+                        onChange={(e) => setNotifySifirAll(e.target.checked)}
+                        className="w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500 cursor-pointer"
+                      />
+                      <span className="text-sm text-gray-700 font-medium">👑 Cabaran Sifir Lengkap (Selesai Sifir 2 – 12)</span>
+                    </label>
+
+                    <label className="flex items-center gap-3 cursor-pointer select-none">
+                      <input 
+                        type="checkbox" 
+                        checked={notifyLatihanAsas} 
+                        onChange={(e) => setNotifyLatihanAsas(e.target.checked)}
+                        className="w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500 cursor-pointer"
+                      />
+                      <span className="text-sm text-gray-700 font-medium">🎯 Latihan Asas Matematik Harian (20 Soalan)</span>
+                    </label>
+                  </div>
                 </div>
                 
                 {telegramTestStatus && (

@@ -403,24 +403,43 @@ export const getTelegramSettings = async () => {
     const docRef = doc(db, "settings", "telegram");
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
-      return docSnap.data();
+      const data = docSnap.data();
+      return {
+        token: data.token || '',
+        chatId: data.chatId || '',
+        notifyRedeem: data.notifyRedeem !== false,
+        notifySifirAll: data.notifySifirAll !== false,
+        notifyLatihanAsas: data.notifyLatihanAsas !== false,
+      };
     }
-    return { token: '', chatId: '' };
+    return { token: '', chatId: '', notifyRedeem: true, notifySifirAll: true, notifyLatihanAsas: true };
   } catch (error) {
     console.error("Error getting Telegram settings: ", error);
-    return { token: '', chatId: '' };
+    return { token: '', chatId: '', notifyRedeem: true, notifySifirAll: true, notifyLatihanAsas: true };
   }
 };
 
-export const updateTelegramSettings = async (token, chatId) => {
+export const updateTelegramSettings = async (token, chatId, preferences = {}) => {
   try {
     const docRef = doc(db, "settings", "telegram");
-    await setDoc(docRef, { token, chatId }, { merge: true });
+    const payload = {
+      token,
+      chatId,
+      ...(preferences.notifyRedeem !== undefined ? { notifyRedeem: preferences.notifyRedeem } : {}),
+      ...(preferences.notifySifirAll !== undefined ? { notifySifirAll: preferences.notifySifirAll } : {}),
+      ...(preferences.notifyLatihanAsas !== undefined ? { notifyLatihanAsas: preferences.notifyLatihanAsas } : {}),
+    };
+    await setDoc(docRef, payload, { merge: true });
     return true;
   } catch (error) {
     console.error("Error updating Telegram settings: ", error);
     return false;
   }
+};
+
+const escapeMarkdown = (text) => {
+  if (!text) return '';
+  return String(text).replace(/[_*`]/g, '');
 };
 
 export const sendTelegramNotification = async (message) => {
@@ -452,6 +471,82 @@ export const sendTelegramNotification = async (message) => {
     }
   } catch (error) {
     console.error("Error sending Telegram notification: ", error);
+    return false;
+  }
+};
+
+export const notifyTelegramAllSifirCompleted = async (childName, totalPoints) => {
+  try {
+    const settings = await getTelegramSettings();
+    if (settings.notifySifirAll === false) {
+      console.log("Sifir notification disabled in settings.");
+      return false;
+    }
+
+    const name = escapeMarkdown(childName);
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('ms-MY', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    const timeStr = now.toLocaleTimeString('ms-MY', { hour: '2-digit', minute: '2-digit' });
+
+    const message = `👑 *SEMUA SIFIR 2 - 12 SELESAI!* 👑\n\n` +
+      `🎉 *Tahniah Luar Biasa!*\n` +
+      `Anak anda, *${name}*, telah berjaya menamatkan SEMUA Cabaran Sifir (Sifir 2 hingga 12) untuk hari ini!\n\n` +
+      `👤 *Anak:* ${name}\n` +
+      `🔢 *Pencapaian:* Selesai Sifir 2 - 12 (11 Sifir)\n` +
+      `⭐ *Jumlah Mata Sifir Hari Ini:* +22 mata\n` +
+      `🏆 *Jumlah Mata Terkini:* ${totalPoints} mata\n` +
+      `📅 *Tarikh & Masa:* ${dateStr}, ${timeStr}\n\n` +
+      `Tahniah atas usaha gigih anak anda! Jangan lupa berikan pujian istimewa kepada mereka hari ini! 🌟👏`;
+
+    return await sendTelegramNotification(message);
+  } catch (error) {
+    console.error("Error sending All Sifir Telegram notification:", error);
+    return false;
+  }
+};
+
+export const notifyTelegramLatihanAsasCompleted = async (childName, score, totalQuestions, pointsEarned, totalPoints) => {
+  try {
+    const settings = await getTelegramSettings();
+    if (settings.notifyLatihanAsas === false) {
+      console.log("Latihan Asas notification disabled in settings.");
+      return false;
+    }
+
+    const name = escapeMarkdown(childName);
+    const percentage = Math.round((score / totalQuestions) * 100);
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('ms-MY', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    const timeStr = now.toLocaleTimeString('ms-MY', { hour: '2-digit', minute: '2-digit' });
+
+    const message = `🎯 *LATIHAN ASAS MATEMATIK SELESAI!* 🎯\n\n` +
+      `Anak anda telah menyelesaikan ${totalQuestions} soalan Latihan Asas Matematik Harian!\n\n` +
+      `👤 *Anak:* ${name}\n` +
+      `📊 *Skor:* ${score} / ${totalQuestions} (${percentage}%)\n` +
+      `⭐ *Mata Diperoleh:* +${pointsEarned} mata\n` +
+      `🏆 *Jumlah Mata Terkini:* ${totalPoints} mata\n` +
+      `📅 *Tarikh & Masa:* ${dateStr}, ${timeStr}\n\n` +
+      `Hebat! Konsistensi adalah kunci kejayaan. 🚀`;
+
+    return await sendTelegramNotification(message);
+  } catch (error) {
+    console.error("Error sending Latihan Asas Telegram notification:", error);
+    return false;
+  }
+};
+
+export const notifyTelegramRedemption = async (childName, rewardTime, cost) => {
+  try {
+    const settings = await getTelegramSettings();
+    if (settings.notifyRedeem === false) {
+      return false;
+    }
+
+    const name = escapeMarkdown(childName);
+    const message = `🎉 *Tahniah!*\n\nAnak anda, *${name}* baru sahaja menebus hadiah:\n🎁 *${rewardTime}*\n💰 Menggunakan *${cost} mata*.\n\nSila tunaikan permintaan mereka! 😉`;
+    return await sendTelegramNotification(message);
+  } catch (error) {
+    console.error("Error sending redemption Telegram notification:", error);
     return false;
   }
 };

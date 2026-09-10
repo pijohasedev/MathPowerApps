@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-vars, react-hooks/exhaustive-deps, react-hooks/purity */
 import React, { useState, useEffect, useRef } from 'react';
-import { getQuestions, getProfiles, updatePoints, deductPoints, addRedemption, updateLastLogin, updateSessionTime, getRewards, completeSifir, completeLatihanAsas, sendTelegramNotification, logAnswer, getAiSettings, evaluateWithGemini } from '../services/store';
+import { getQuestions, getProfiles, updatePoints, deductPoints, addRedemption, updateLastLogin, updateSessionTime, getRewards, completeSifir, completeLatihanAsas, sendTelegramNotification, notifyTelegramAllSifirCompleted, notifyTelegramLatihanAsasCompleted, notifyTelegramRedemption, logAnswer, getAiSettings, evaluateWithGemini } from '../services/store';
 import LatexRenderer from '../components/LatexRenderer';
 import { createPortal } from 'react-dom';
 import '../calculator.css';
@@ -333,9 +333,21 @@ function ChildDashboard() {
     if (parseInt(finalAnswer) === currentQ.answer) {
       if (sifirIndex === sifirQuestions.length - 1) {
         const points = 2;
+        const todayDate = new Date().toISOString().split('T')[0];
+        const allSifirs = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+        const prevCompleted = (currentChild.dailySifir && currentChild.dailySifir.date === todayDate)
+          ? (currentChild.dailySifir.completed || [])
+          : [];
+        const wasAllCompletedBefore = allSifirs.every(num => prevCompleted.includes(num));
+
         const res = await completeSifir(currentChild.id, selectedSifir, points);
         if (res) {
            setCurrentChild({ ...currentChild, points: res.newPoints, dailySifir: res.dailySifir });
+
+           const isAllCompletedNow = allSifirs.every(num => res.dailySifir?.completed?.includes(num));
+           if (isAllCompletedNow && !wasAllCompletedBefore) {
+             notifyTelegramAllSifirCompleted(currentChild.name, res.newPoints);
+           }
         }
         setFeedback({ isCorrect: true, message: `Tahniah! Anda siapkan Sifir ${selectedSifir} & dapat +${points} mata! 🎉` });
         confetti({
@@ -423,6 +435,15 @@ function ChildDashboard() {
             particleCount: 200, spread: 90, origin: { y: 0.6 },
             colors: ['#6366f1', '#ec4899', '#10b981', '#f59e0b']
           });
+
+          // Hantar notifikasi Telegram Latihan Asas Harian
+          notifyTelegramLatihanAsasCompleted(
+            currentChild.name,
+            newScore,
+            20,
+            pointsToReward,
+            res ? res.newPoints : (currentChild.points + pointsToReward)
+          );
         } else {
           setLatihanIndex(prev => prev + 1);
         }
@@ -447,7 +468,7 @@ function ChildDashboard() {
         setRedeemMessage({ success: true, text: `Berjaya! Anda telah menebus ${time}. Sila beritahu ibu/bapa anda untuk buka game! 🎮` });
         
         // Hantar notifikasi Telegram secara senyap di belakang tabir
-        sendTelegramNotification(`🎉 *Tahniah!* \n\nAnak anda, *${currentChild.name}* baru sahaja menebus hadiah:\n🎁 *${time}*\n💰 Menggunakan *${cost} mata*.\n\nSila tunaikan permintaan mereka! 😉`);
+        notifyTelegramRedemption(currentChild.name, time, cost);
       } else {
         setRedeemMessage({ success: false, text: 'Ralat semasa menolak mata.' });
       }
