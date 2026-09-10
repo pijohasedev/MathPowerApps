@@ -1177,6 +1177,7 @@ function ParentDashboard() {
                         <tr className="bg-gray-50 border-b border-gray-200" style={{ backgroundColor: 'rgba(248, 250, 252, 0.8)' }}>
                           <th className="p-4 table-header text-center">Nama</th>
                           <th className="p-4 table-header text-center">Tahap</th>
+                          <th className="p-4 table-header text-center">Latihan Asas Harian</th>
                           <th className="p-4 table-header text-center">Masa Sesi<br/><span className="text-[10px] font-normal text-muted">(Harian | Mingguan | Bulanan)</span></th>
                           <th className="p-4 table-header text-center">Log Masuk Akhir</th>
                           <th className="p-4 table-header text-center">Mata</th>
@@ -1185,10 +1186,25 @@ function ParentDashboard() {
                       <tbody style={{ borderTop: '1px solid #f1f5f9' }}>
                         {profiles.map(p => {
                           const stats = calculateTimeStats(p);
+                          const todayDate = new Date().toISOString().split('T')[0];
+                          const la = p.dailyLatihanAsas;
+                          const laDone = la && la.date === todayDate && la.completed;
+
                           return (
                             <tr key={p.id} className="border-b border-gray-100 hover:bg-gray-50/50 transition-colors">
                               <td className="p-4 text-center font-bold text-primary align-middle text-[15px]">{p.name}</td>
                               <td className="p-4 text-center text-sm text-muted align-middle">{p.tahunTingkatan}</td>
+                              <td className="p-4 text-center align-middle">
+                                {laDone ? (
+                                  <span className="bg-emerald-100 text-emerald-800 text-xs font-extrabold px-3 py-1 rounded-full inline-flex items-center gap-1">
+                                    ✅ {la.score}/{la.total || 20} (+{la.pointsEarned || la.score * 2} Mata)
+                                  </span>
+                                ) : (
+                                  <span className="bg-amber-50 text-amber-700 text-xs font-semibold px-2.5 py-1 rounded-full">
+                                    ⏳ Belum Siap
+                                  </span>
+                                )}
+                              </td>
                               <td className="p-4 text-center align-middle">
                                 <div className="flex justify-center gap-2 text-[11px] font-bold">
                                   <span className="bg-emerald-50 text-emerald-700 px-2 py-1 rounded" title="Masa Harian">{stats.daily}</span>

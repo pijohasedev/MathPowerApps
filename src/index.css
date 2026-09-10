@@ -788,3 +788,8 @@ h3 { font-size: 1.5rem; }
   border-color: var(--success);
   color: var(--success);
 }
+
+/* KaTeX Font Scaling for Math Questions */
+.katex {
+  font-size: 1.15em !important;
+}

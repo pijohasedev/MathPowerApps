@@ -1,13 +1,14 @@
 /* eslint-disable no-unused-vars, react-hooks/exhaustive-deps, react-hooks/purity */
 import React, { useState, useEffect, useRef } from 'react';
-import { getQuestions, getProfiles, updatePoints, deductPoints, addRedemption, updateLastLogin, updateSessionTime, getRewards, completeSifir, sendTelegramNotification, logAnswer, getAiSettings, evaluateWithGemini } from '../services/store';
+import { getQuestions, getProfiles, updatePoints, deductPoints, addRedemption, updateLastLogin, updateSessionTime, getRewards, completeSifir, completeLatihanAsas, sendTelegramNotification, logAnswer, getAiSettings, evaluateWithGemini } from '../services/store';
 import LatexRenderer from '../components/LatexRenderer';
 import { createPortal } from 'react-dom';
 import '../calculator.css';
 import PinPad from '../components/PinPad';
 import ScientificCalculator from '../components/Calculator';
-import { LogOut, LayoutGrid, Brain, Gift as GiftIcon, Calculator, Hash, Medal, ChevronLeft } from 'lucide-react';
+import { LogOut, LayoutGrid, Brain, Gift as GiftIcon, Calculator, Hash, Medal, ChevronLeft, BookOpen, CheckCircle, XCircle, Award } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { generateDailyAsasQuestions } from '../utils/latihanAsasGenerator';
 
 const normalizeAnswer = (ans) => {
   if (!ans) return "";
@@ -75,6 +76,15 @@ function ChildDashboard() {
   const [selectedSifir, setSelectedSifir] = useState(null);
   const [sifirQuestions, setSifirQuestions] = useState([]);
   const [sifirIndex, setSifirIndex] = useState(0);
+
+  // Latihan Asas State
+  const [latihanQuestions, setLatihanQuestions] = useState([]);
+  const [latihanIndex, setLatihanIndex] = useState(0);
+  const [latihanUserAnswer, setLatihanUserAnswer] = useState('');
+  const [latihanScore, setLatihanScore] = useState(0);
+  const [latihanResults, setLatihanResults] = useState([]);
+  const [latihanFinished, setLatihanFinished] = useState(false);
+  const [isLatihanStarted, setIsLatihanStarted] = useState(false);
 
   // State for Redeem UI
   const [isRedeeming, setIsRedeeming] = useState(false);
@@ -355,6 +365,78 @@ function ChildDashboard() {
     }
   };
 
+  const startLatihanAsas = () => {
+    const todayDate = new Date().toISOString().split('T')[0];
+    const qs = generateDailyAsasQuestions(todayDate, currentChild?.id || '');
+    setLatihanQuestions(qs);
+    setLatihanIndex(0);
+    setLatihanUserAnswer('');
+    setLatihanScore(0);
+    setLatihanResults([]);
+    setLatihanFinished(false);
+    setIsLatihanStarted(true);
+  };
+
+  const handleLatihanSubmit = async (answerVal) => {
+    const finalAnswer = typeof answerVal === 'string' ? answerVal : latihanUserAnswer;
+    if (!finalAnswer && finalAnswer !== '0') return;
+
+    const currentQ = latihanQuestions[latihanIndex];
+    if (!currentQ) return;
+    
+    const normUser = normalizeAnswer(finalAnswer);
+    let isCorrect = false;
+    if (currentQ.acceptableAnswers && currentQ.acceptableAnswers.length > 0) {
+      isCorrect = currentQ.acceptableAnswers.some(acc => normalizeAnswer(acc) === normUser);
+    }
+    if (!isCorrect) {
+      isCorrect = normalizeAnswer(currentQ.answer) === normUser;
+    }
+
+    if (isCorrect) {
+      const newScore = latihanScore + 1;
+      const newResults = [...latihanResults, {
+        questionText: currentQ.questionText,
+        topic: currentQ.topic,
+        userAnswer: finalAnswer,
+        correctAnswer: currentQ.answer,
+        isCorrect: true,
+        explanation: currentQ.explanation
+      }];
+
+      setLatihanScore(newScore);
+      setLatihanResults(newResults);
+      setFeedback({ isCorrect: true, message: 'Tahniah! Jawapan anda BETUL! 🎉' });
+
+      setTimeout(async () => {
+        setFeedback(null);
+        setLatihanUserAnswer('');
+
+        if (latihanIndex === latihanQuestions.length - 1) {
+          const pointsToReward = newScore * 2;
+          const res = await completeLatihanAsas(currentChild.id, newScore, 20, pointsToReward);
+          if (res) {
+            setCurrentChild({ ...currentChild, points: res.newPoints, dailyLatihanAsas: res.dailyLatihanAsas });
+          }
+          setLatihanFinished(true);
+          confetti({
+            particleCount: 200, spread: 90, origin: { y: 0.6 },
+            colors: ['#6366f1', '#ec4899', '#10b981', '#f59e0b']
+          });
+        } else {
+          setLatihanIndex(prev => prev + 1);
+        }
+      }, 1000);
+    } else {
+      setFeedback({ isCorrect: false, message: 'Ops! Jawapan kurang tepat. Cuba lagi ya! 💪' });
+      setIsShaking(true);
+      setTimeout(() => {
+        setFeedback(null);
+        setIsShaking(false);
+      }, 1500);
+    }
+  };
+
   const handleRedeemPoints = async (cost, time) => {
     if (currentChild.points >= cost) {
       const newPoints = await deductPoints(currentChild.id, cost);
@@ -476,6 +558,11 @@ function ChildDashboard() {
             </button>
           </li>
           <li>
+            <button onClick={() => {setActiveTab('latihanAsas'); setIsLatihanStarted(false);}} className={`sidebar-link ${activeTab === 'latihanAsas' ? 'active' : ''} w-full text-left flex items-center gap-3 px-4 py-3 rounded-lg font-bold text-sm transition-all`}>
+              <BookOpen size={18} /> Latihan Asas Harian
+            </button>
+          </li>
+          <li>
             <button onClick={() => setActiveTab('rewards')} className={`sidebar-link ${activeTab === 'rewards' ? 'active' : ''} w-full text-left flex items-center gap-3 px-4 py-3 rounded-lg font-bold text-sm transition-all`}>
               <GiftIcon size={18} /> Tebus Hadiah
             </button>
@@ -523,6 +610,223 @@ function ChildDashboard() {
                 ))}
               </div>
             )}
+          </div>
+        )}
+
+        {/* LATIHAN ASAS TAB */}
+        {activeTab === 'latihanAsas' && (
+          <div className="animate-fade-in">
+            {(() => {
+              const todayDate = new Date().toISOString().split('T')[0];
+              const dailyLa = currentChild?.dailyLatihanAsas;
+              const hasDoneToday = dailyLa && dailyLa.date === todayDate && dailyLa.completed;
+
+              if (!isLatihanStarted && !latihanFinished) {
+                return (
+                  <div className="max-w-3xl mx-auto text-center py-6">
+                    <div className="inline-flex items-center justify-center p-4 bg-indigo-50 text-indigo-600 rounded-full mb-4">
+                      <BookOpen size={48} />
+                    </div>
+                    <h2 className="text-3xl font-extrabold text-gray-800 mb-2">Cabaran Latihan Asas Harian 📝</h2>
+                    <p className="text-muted font-medium mb-8 max-w-xl mx-auto">
+                      Latih kemahiran matematik anda setiap hari dengan 20 soalan campuran operasi asas (Tambah, Tolak, Darab & Bahagi) untuk Pecahan, Perpuluhan, Nombor Bulat dan Peratus!
+                    </p>
+
+                    <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm mb-8 text-center">
+                      {hasDoneToday ? (
+                        <div className="flex flex-col items-center">
+                          <span className="bg-green-100 text-green-800 text-sm font-extrabold px-4 py-1.5 rounded-full mb-3 flex items-center gap-1.5">
+                            <CheckCircle size={16} /> Telah Diselesaikan Hari Ini 🎉
+                          </span>
+                          <p className="text-gray-700 font-medium mb-1">
+                            Markah Hari Ini: <span className="font-bold text-primary text-xl">{dailyLa.score} / {dailyLa.total || 20}</span>
+                          </p>
+                          <p className="text-xs text-gray-500 mb-4">
+                            Mata ganjaran diperolehi: <span className="font-bold text-amber-600">+{dailyLa.pointsEarned || dailyLa.score * 2} Mata</span>
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-center">
+                          <span className="bg-indigo-50 text-indigo-700 text-xs font-bold px-3 py-1 rounded-full mb-2">
+                            🎁 Ganjaran: +2 Mata Setiap Soalan (Maks +40 Mata)
+                          </span>
+                          <p className="text-gray-600 font-medium mb-4">
+                            Selesaikan 20 soalan untuk mendapatkan mata ganjaran hari ini!
+                          </p>
+                        </div>
+                      )}
+
+                      <button
+                        onClick={startLatihanAsas}
+                        className="btn btn-primary py-4 px-8 text-lg font-bold rounded-xl shadow-lg hover:shadow-xl transition-all"
+                      >
+                        {hasDoneToday ? '🔄 Cuba Lagi (Ulangan)' : '🚀 Mula Latihan Hari Ini (20 Soalan)'}
+                      </button>
+                    </div>
+                  </div>
+                );
+              }
+
+              if (isLatihanStarted && !latihanFinished) {
+                const currentQ = latihanQuestions[latihanIndex];
+                const progressPercent = Math.round(((latihanIndex + 1) / 20) * 100);
+
+                return (
+                  <div className={`max-w-2xl mx-auto transition-all ${isShaking ? 'shake-animation' : ''} select-none`} style={{ userSelect: 'none' }} onCopy={(e) => e.preventDefault()}>
+                    {/* Header Controls */}
+                    <div className="flex justify-between items-center mb-6">
+                      <button 
+                        className="btn btn-outline py-1 px-3 flex items-center gap-2 text-sm" 
+                        onClick={() => { setIsLatihanStarted(false); setFeedback(null); }}
+                      >
+                        <ChevronLeft size={16} /> Keluar
+                      </button>
+                      
+                      <div className="flex items-center gap-2">
+                        <span className="bg-indigo-100 text-indigo-800 text-xs font-extrabold px-3 py-1 rounded-full uppercase tracking-wider">
+                          Soalan {latihanIndex + 1} / 20
+                        </span>
+                        <span className="bg-purple-100 text-purple-800 text-xs font-extrabold px-3 py-1 rounded-full">
+                          {currentQ?.topic}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Progress Bar */}
+                    <div className="w-full bg-gray-200 rounded-full h-2.5 mb-8 overflow-hidden">
+                      <div className="bg-primary h-2.5 rounded-full transition-all duration-300" style={{ width: `${progressPercent}%` }}></div>
+                    </div>
+
+                    {/* Question Display Card */}
+                    <div className="bg-white p-8 md:p-10 rounded-2xl shadow-md border border-gray-100 text-center mb-8">
+                      <div className="text-xs uppercase tracking-widest text-muted font-bold mb-3">
+                        {currentQ?.topic} • Operasi {currentQ?.operation}
+                      </div>
+                      <div className="text-5xl md:text-6xl font-extrabold text-gray-900 my-6 flex justify-center items-center min-h-[110px]" style={{ fontSize: '3.25rem', lineHeight: '1.3' }}>
+                        <LatexRenderer>{currentQ?.questionText ? `${currentQ.questionText} = ?` : ''}</LatexRenderer>
+                      </div>
+                    </div>
+
+                    {/* Quick Input Helpers for Math Symbols */}
+                    <div className="flex justify-center gap-2 mb-4 flex-wrap">
+                      <button type="button" className="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold rounded-lg text-sm border border-indigo-200" onClick={() => setLatihanUserAnswer(prev => prev + '/')}>
+                        Pecahan ( / )
+                      </button>
+                      <button type="button" className="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold rounded-lg text-sm border border-indigo-200" onClick={() => setLatihanUserAnswer(prev => prev + '.')}>
+                        Perpuluhan ( . )
+                      </button>
+                      <button type="button" className="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold rounded-lg text-sm border border-indigo-200" onClick={() => setLatihanUserAnswer(prev => prev + '%')}>
+                        Peratus ( % )
+                      </button>
+                      <button type="button" className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-lg text-sm border border-gray-200" onClick={() => setLatihanUserAnswer('')}>
+                        Padam (Clear)
+                      </button>
+                    </div>
+
+                    {/* Answer Input */}
+                    <div className="flex flex-col items-center w-full max-w-md mx-auto">
+                      <input 
+                        type="text" 
+                        className="input-field text-center w-full" 
+                        style={{ fontSize: '1.75rem', fontWeight: 'bold', padding: '1rem' }}
+                        placeholder="Masukkan jawapan anda..." 
+                        value={latihanUserAnswer}
+                        onChange={(e) => setLatihanUserAnswer(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleLatihanSubmit(latihanUserAnswer)}
+                        disabled={feedback && feedback.isCorrect}
+                        autoFocus
+                      />
+                      <button 
+                        className="btn btn-secondary mt-4 w-full py-4 text-lg rounded-xl font-bold shadow-md hover:shadow-lg transition-all" 
+                        onClick={() => handleLatihanSubmit(latihanUserAnswer)}
+                        disabled={feedback && feedback.isCorrect}
+                      >
+                        Hantar Jawapan
+                      </button>
+                    </div>
+
+                    {/* Feedback Message */}
+                    {feedback && (
+                      <div className="p-4 mt-6 rounded-xl font-bold text-center animate-fade-in shadow-sm" style={{ backgroundColor: feedback.isCorrect ? '#dcfce7' : '#fee2e2', color: feedback.isCorrect ? '#166534' : '#991b1b' }}>
+                        {feedback.message}
+                      </div>
+                    )}
+                  </div>
+                );
+              }
+
+              if (latihanFinished) {
+                const earned = latihanScore * 2;
+                return (
+                  <div className="max-w-3xl mx-auto text-center py-6 animate-fade-in">
+                    <div className="inline-flex items-center justify-center p-4 bg-amber-50 text-amber-500 rounded-full mb-4">
+                      <Award size={56} />
+                    </div>
+                    <h2 className="text-3xl font-extrabold text-gray-800 mb-2">Tahniah! Latihan Harian Selesai! 🎉</h2>
+                    <p className="text-muted font-medium mb-6">
+                      Anda telah menyelesaikan 20 soalan Latihan Asas Harian untuk hari ini.
+                    </p>
+
+                    {/* Score Summary Box */}
+                    <div className="bg-gradient-to-br from-indigo-50 to-purple-50 p-6 rounded-2xl border border-indigo-100 mb-8 max-w-lg mx-auto shadow-sm">
+                      <div className="grid grid-cols-2 gap-4 text-center">
+                        <div className="bg-white p-4 rounded-xl border border-indigo-100 shadow-sm">
+                          <span className="text-xs uppercase font-bold text-gray-400">Markah</span>
+                          <h3 className="text-3xl font-black text-primary my-1">{latihanScore} / 20</h3>
+                          <span className="text-xs text-emerald-600 font-bold">{Math.round((latihanScore / 20) * 100)}% Betul</span>
+                        </div>
+                        <div className="bg-white p-4 rounded-xl border border-indigo-100 shadow-sm">
+                          <span className="text-xs uppercase font-bold text-gray-400">Mata Ganjaran</span>
+                          <h3 className="text-3xl font-black text-amber-500 my-1">+{earned}</h3>
+                          <span className="text-xs text-gray-500 font-medium">🌟 Mata Ditambah</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Review List of Questions */}
+                    <div className="text-left bg-white p-6 rounded-2xl border border-gray-200 shadow-sm mb-8">
+                      <h4 className="font-bold text-gray-800 text-base mb-4 flex items-center gap-2">
+                        📋 Ringkasan Jawapan 20 Soalan:
+                      </h4>
+                      <div className="space-y-3 max-h-[350px] overflow-y-auto pr-2">
+                        {latihanResults.map((r, idx) => (
+                          <div key={idx} className={`p-3 rounded-xl border flex items-center justify-between gap-4 text-sm ${r.isCorrect ? 'bg-emerald-50/60 border-emerald-200' : 'bg-rose-50/60 border-rose-200'}`}>
+                            <div className="flex items-center gap-3">
+                              {r.isCorrect ? (
+                                <CheckCircle size={20} className="text-emerald-600 shrink-0" />
+                              ) : (
+                                <XCircle size={20} className="text-rose-600 shrink-0" />
+                              )}
+                              <div>
+                                <span className="text-xs font-bold text-gray-400 block">{idx + 1}. {r.topic}</span>
+                                <div className="font-bold text-gray-800 inline-block">
+                                  <LatexRenderer>{r.questionText}</LatexRenderer>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <span className="text-xs text-gray-500 block">Jawapan Anda: <strong className={r.isCorrect ? 'text-emerald-700' : 'text-rose-700'}>{r.userAnswer}</strong></span>
+                              {!r.isCorrect && (
+                                <span className="text-xs text-gray-600 block">Tepat: <strong className="text-emerald-700">{r.correctAnswer}</strong></span>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <button 
+                      onClick={() => { setIsLatihanStarted(false); setLatihanFinished(false); }}
+                      className="btn btn-primary py-3 px-8 text-base font-bold rounded-xl shadow-md hover:shadow-lg"
+                    >
+                      Kembali ke Menu Utama
+                    </button>
+                  </div>
+                );
+              }
+
+              return null;
+            })()}
           </div>
         )}
 
@@ -616,8 +920,18 @@ function ChildDashboard() {
                 <p className="text-muted font-medium mb-8">Pilih topik untuk mula mengumpul mata.</p>
                 
                 {uniqueTopics.length === 0 ? (
-                  <div className="bg-gray-50 p-8 rounded border border-dashed border-gray-300 text-center">
-                    <p className="mb-0 text-muted">Tiada soalan tersedia untuk tahun/tingkatan anda.</p>
+                  <div className="bg-indigo-50/70 p-8 rounded-2xl border border-indigo-100 text-center max-w-xl mx-auto my-4">
+                    <div className="text-4xl mb-3">📝</div>
+                    <h3 className="text-xl font-bold text-gray-800 mb-2">Jom Cuba Latihan Asas Harian!</h3>
+                    <p className="text-sm text-gray-600 mb-6">
+                      Tiada soalan khusus dalam tajuk ini buat masa ini. Namun, anda boleh menjawab <strong>20 Soalan Latihan Asas Harian</strong> (Tambah, Tolak, Darab, Bahagi, Pecahan, Perpuluhan, Peratus) yang sedia dijana secara automatik!
+                    </p>
+                    <button 
+                      onClick={() => { setActiveTab('latihanAsas'); setIsLatihanStarted(false); }} 
+                      className="btn btn-primary py-3 px-6 text-base font-bold rounded-xl flex items-center justify-center gap-2 mx-auto shadow-md hover:shadow-lg transition-all"
+                    >
+                      <BookOpen size={20} /> Buka Latihan Asas Harian (20 Soalan)
+                    </button>
                   </div>
                 ) : (
                   <div className="math-topics-grid">

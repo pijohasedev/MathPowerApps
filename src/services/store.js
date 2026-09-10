@@ -168,6 +168,40 @@ export const completeSifir = async (childId, sifirNumber, pointsToReward) => {
   }
 };
 
+export const completeLatihanAsas = async (childId, score, totalQuestions, pointsToReward) => {
+  try {
+    const profileRef = doc(db, "profiles", childId);
+    const profileSnap = await getDoc(profileRef);
+    
+    if (profileSnap.exists()) {
+      const data = profileSnap.data();
+      const currentPoints = data.points || 0;
+      const newPoints = currentPoints + pointsToReward;
+      
+      const todayDate = new Date().toISOString().split('T')[0];
+      const dailyLatihanAsas = {
+        date: todayDate,
+        completed: true,
+        score: score,
+        total: totalQuestions,
+        pointsEarned: pointsToReward,
+        timestamp: new Date().toISOString()
+      };
+      
+      await updateDoc(profileRef, { 
+        points: newPoints,
+        dailyLatihanAsas: dailyLatihanAsas
+      });
+      
+      return { newPoints, dailyLatihanAsas };
+    }
+    return null;
+  } catch (error) {
+    console.error("Error completing latihan asas: ", error);
+    return null;
+  }
+};
+
 export const resetQuestionForProfiles = async (questionId) => {
   try {
     const q = query(collection(db, "profiles"));

@@ -3,11 +3,22 @@ import React from 'react';
 import katex from 'katex';
 import 'katex/dist/katex.min.css';
 
-export default function LatexRenderer({ children }) {
-  if (typeof children !== 'string') return <span style={{ whiteSpace: 'pre-wrap' }}>{children}</span>;
+export default function LatexRenderer({ children, latex }) {
+  const textContent = (typeof children === 'string' ? children : (typeof latex === 'string' ? latex : '')) || '';
+
+  if (!textContent) {
+    if (children) return <span style={{ whiteSpace: 'pre-wrap' }}>{children}</span>;
+    return null;
+  }
+
+  // Auto-wrap string in $...$ if it contains LaTeX commands or operators and is not already wrapped
+  let formattedText = textContent;
+  if (!formattedText.includes('$') && (formattedText.includes('\\') || formattedText.includes('+') || formattedText.includes('-') || formattedText.includes('='))) {
+    formattedText = `$${formattedText}$`;
+  }
 
   // Split text by $...$
-  const parts = children.split(/(\$.*?\$)/g);
+  const parts = formattedText.split(/(\$.*?\$)/g);
   
   return (
     <span style={{ whiteSpace: 'pre-wrap' }}>
