@@ -213,7 +213,7 @@ function ChildDashboard() {
          
          if (apiKey) {
            setFeedback({ isLoading: true, message: 'AI sedang menyemak jawapan anda... 🤖' });
-           const aiResult = await evaluateWithGemini(currentQ.soalan, finalAnswer, currentQ.jawapan, apiKey);
+           const aiResult = await evaluateWithGemini(currentQ.soalan, finalAnswer, currentQ.jawapan, settings);
            if (aiResult) {
              isCorrect = aiResult.isCorrect;
              extraLogData = { 

@@ -4,7 +4,7 @@ import {
   ChevronDown, ChevronUp, Info, RotateCcw, Gift, Clock
 } from 'lucide-react';
 import { 
-  getProfiles, addProfile, deleteProfile, getQuestions, addQuestion, updateQuestion, deleteQuestion, updateProfile, getRedemptions, resetQuestionForProfiles, getParentPin, updateParentPin, getRewards, addReward, updateReward, deleteReward, getTelegramSettings, updateTelegramSettings, sendTelegramNotification, getPerformanceReport, getAiSettings, updateAiSettings, getPendingReviews, updateReviewStatus, updatePoints
+  getProfiles, addProfile, deleteProfile, getQuestions, addQuestion, updateQuestion, deleteQuestion, updateProfile, getRedemptions, resetQuestionForProfiles, getParentPin, updateParentPin, getRewards, addReward, updateReward, deleteReward, getTelegramSettings, updateTelegramSettings, sendTelegramNotification, getPerformanceReport, getAiSettings, updateAiSettings, testAiConnection, getPendingReviews, updateReviewStatus, updatePoints
 } from '../services/store';
 import LatexRenderer from '../components/LatexRenderer';
 import PinPad from '../components/PinPad';
@@ -34,7 +34,12 @@ function ParentDashboard() {
   
   // AI Settings State
   const [geminiApiKey, setGeminiApiKey] = useState('');
+  const [aiProvider, setAiProvider] = useState('tokenharbor');
+  const [aiModel, setAiModel] = useState('mimo-v2.5');
+  const [aiCustomBaseUrl, setAiCustomBaseUrl] = useState('');
   const [aiSaveStatus, setAiSaveStatus] = useState(null);
+  const [aiTestStatus, setAiTestStatus] = useState(null);
+  const [isTestingAi, setIsTestingAi] = useState(false);
   
   // Pending Reviews State
   const [pendingReviews, setPendingReviews] = useState([]);
@@ -194,6 +199,9 @@ function ParentDashboard() {
   const loadAiSettings = async () => {
     const settings = await getAiSettings();
     setGeminiApiKey(settings.apiKey || '');
+    setAiProvider(settings.provider || 'tokenharbor');
+    setAiModel(settings.model || '');
+    setAiCustomBaseUrl(settings.customBaseUrl || '');
   };
   const loadPendingReviews = async () => setPendingReviews(await getPendingReviews());
 
@@ -225,12 +233,44 @@ function ParentDashboard() {
   };
 
   const handleSaveAiSettings = async () => {
-    const success = await updateAiSettings(geminiApiKey);
+    const success = await updateAiSettings({
+      apiKey: geminiApiKey,
+      provider: aiProvider,
+      model: aiModel,
+      customBaseUrl: aiCustomBaseUrl
+    });
     if (success) {
-      setAiSaveStatus({ type: 'success', msg: 'Kunci API AI berjaya disimpan!' });
+      setAiSaveStatus({ type: 'success', msg: 'Tetapan AI berjaya disimpan!' });
       setTimeout(() => setAiSaveStatus(null), 3000);
     } else {
-      setAiSaveStatus({ type: 'error', msg: 'Gagal menyimpan kekunci API.' });
+      setAiSaveStatus({ type: 'error', msg: 'Gagal menyimpan tetapan AI.' });
+    }
+  };
+
+  const handleTestAi = async () => {
+    if (!geminiApiKey || !geminiApiKey.trim()) {
+      setAiTestStatus({ type: 'error', msg: 'Sila masukkan Kunci API (API Key) terlebih dahulu sebelum menguji sambungan.' });
+      setTimeout(() => setAiTestStatus(null), 5000);
+      return;
+    }
+    setIsTestingAi(true);
+    setAiTestStatus({ type: 'info', msg: 'Sedang menguji sambungan ke pembekal AI... Sila tunggu sebentar. ⏳' });
+    try {
+      const res = await testAiConnection({
+        apiKey: geminiApiKey,
+        provider: aiProvider,
+        model: aiModel,
+        customBaseUrl: aiCustomBaseUrl
+      });
+      if (res.success) {
+        setAiTestStatus({ type: 'success', msg: res.message });
+      } else {
+        setAiTestStatus({ type: 'error', msg: res.message });
+      }
+    } catch (err) {
+      setAiTestStatus({ type: 'error', msg: `Ralat sambungan: ${err.message || 'Gagal menghubungi AI'}` });
+    } finally {
+      setIsTestingAi(false);
     }
   };
 
@@ -2353,19 +2393,99 @@ function ParentDashboard() {
               
               {/* AI Settings */}
               <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                <h3 className="mb-4">Integrasi AI (Semakan Automatik)</h3>
-                <p className="text-muted text-sm mb-6">Masukkan kunci API untuk membolehkan AI menyemak jawapan subjektif secara automatik.</p>
+                <h3 className="mb-2">Integrasi AI (Semakan Jawapan Automatik)</h3>
+                <p className="text-muted text-sm mb-6">
+                  Pilih pembekal model AI dan masukkan Kunci API untuk membolehkan semakan jawapan subjektif dijalankan secara automatik.
+                </p>
                 
-                <div className="input-group">
-                  <label className="input-label">AI API Key</label>
+                {/* Provider Dropdown */}
+                <div className="input-group mb-4">
+                  <label className="input-label">Pilih Pembekal AI (Provider)</label>
+                  <select 
+                    className="input-field"
+                    value={aiProvider}
+                    onChange={(e) => {
+                      const newProvider = e.target.value;
+                      setAiProvider(newProvider);
+                      if (newProvider === 'tokenharbor') {
+                        setAiModel('mimo-v2.5');
+                      } else if (newProvider === 'opencode') {
+                        setAiModel('deepseek-v4-flash');
+                      } else if (newProvider === 'google') {
+                        setAiModel('gemini-1.5-flash');
+                      } else if (newProvider === 'openrouter') {
+                        setAiModel('google/gemini-1.5-flash');
+                      }
+                    }}
+                  >
+                    <option value="tokenharbor">Token Harbor (https://tokenharbor.ai/v1 - Disyorkan)</option>
+                    <option value="opencode">OpenCode Go (https://opencode.ai/zen/go/v1)</option>
+                    <option value="google">Google Gemini (Direct API)</option>
+                    <option value="openrouter">OpenRouter (https://openrouter.ai/api/v1)</option>
+                    <option value="custom">Kustom (OpenAI-Compatible Endpoint)</option>
+                  </select>
+                </div>
+
+                {/* Custom Base URL (jika pilih Kustom) */}
+                {aiProvider === 'custom' && (
+                  <div className="input-group mb-4">
+                    <label className="input-label">Custom Base URL</label>
+                    <input 
+                      type="text" 
+                      className="input-field" 
+                      value={aiCustomBaseUrl} 
+                      onChange={(e) => setAiCustomBaseUrl(e.target.value)} 
+                      placeholder="https://api.your-provider.com/v1"
+                    />
+                    <p className="text-xs text-muted mt-1">Masukkan URL asas (contoh: https://api.groq.com/openai/v1).</p>
+                  </div>
+                )}
+
+                {/* Model Name */}
+                <div className="input-group mb-4">
+                  <label className="input-label">Nama Model</label>
+                  <input 
+                    type="text" 
+                    className="input-field" 
+                    value={aiModel} 
+                    onChange={(e) => setAiModel(e.target.value)} 
+                    placeholder={
+                      aiProvider === 'tokenharbor' ? 'mimo-v2.5' :
+                      aiProvider === 'opencode' ? 'deepseek-v4-flash' :
+                      aiProvider === 'google' ? 'gemini-1.5-flash' :
+                      aiProvider === 'openrouter' ? 'google/gemini-1.5-flash' : 'nama-model'
+                    }
+                  />
+                  <p className="text-xs text-muted mt-1">
+                    {aiProvider === 'tokenharbor' && "Lalai: mimo-v2.5 (Tersedia pada akaun Token Harbor)."}
+                    {aiProvider === 'opencode' && "Lalai: deepseek-v4-flash."}
+                    {aiProvider === 'google' && "Lalai: gemini-1.5-flash."}
+                    {aiProvider === 'openrouter' && "Lalai: google/gemini-1.5-flash atau deepseek/deepseek-chat."}
+                    {aiProvider === 'custom' && "Nama model yang disokong oleh penyedia anda."}
+                  </p>
+                </div>
+
+                {/* API Key */}
+                <div className="input-group mb-4">
+                  <label className="input-label">Kunci API (API Key)</label>
                   <input 
                     type="password" 
                     className="input-field" 
                     value={geminiApiKey} 
                     onChange={(e) => setGeminiApiKey(e.target.value)} 
-                    placeholder="sk-or-... atau AIzaSy..."
+                    placeholder={
+                      aiProvider === 'tokenharbor' ? 'thk_live_...' :
+                      aiProvider === 'google' ? 'AIzaSy...' :
+                      aiProvider === 'openrouter' ? 'sk-or-v1-...' : 'sk-...'
+                    }
                   />
-                  <p className="text-xs text-muted mt-1">Masukkan API Key dari pembekal pilihan anda.</p>
+                  <p className="text-xs text-muted mt-1">
+                    {aiProvider === 'tokenharbor' && "Dapatkan Universal Key dari https://tokenharbor.ai."}
+                    {aiProvider === 'opencode' && "Masukkan API Key OpenCode anda."}
+                    {aiProvider === 'google' && "Dapatkan API Key dari Google AI Studio."}
+                    {aiProvider === 'openrouter' && "Dapatkan API Key dari https://openrouter.ai."}
+                    {aiProvider === 'custom' && "Kunci pengesahan Bearer token penyedia anda."}
+                  </p>
                 </div>
                 
                 {aiSaveStatus && (
@@ -2373,8 +2493,23 @@ function ParentDashboard() {
                     {aiSaveStatus.msg}
                   </div>
                 )}
+
+                {aiTestStatus && (
+                  <div className={`p-3 mb-4 rounded-lg text-sm ${aiTestStatus.type === 'success' ? 'bg-green-50 text-green-700' : aiTestStatus.type === 'info' ? 'bg-blue-50 text-blue-700' : 'bg-red-50 text-red-700'}`}>
+                    {aiTestStatus.msg}
+                  </div>
+                )}
                 
-                <button className="btn btn-primary" onClick={handleSaveAiSettings}>Simpan API Key</button>
+                <div className="flex gap-2">
+                  <button className="btn btn-primary" onClick={handleSaveAiSettings}>Simpan Tetapan AI</button>
+                  <button 
+                    className="btn btn-secondary flex items-center justify-center gap-2" 
+                    onClick={handleTestAi}
+                    disabled={isTestingAi}
+                  >
+                    <Info size={16} /> {isTestingAi ? 'Menguji Sambungan...' : 'Uji Sambungan AI'}
+                  </button>
+                </div>
               </div>
             </div>
           </div>

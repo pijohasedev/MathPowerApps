@@ -598,19 +598,41 @@ export const getAiSettings = async () => {
     const docRef = doc(db, "settings", "ai");
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
-      return docSnap.data();
+      const data = docSnap.data();
+      return {
+        apiKey: data.apiKey || '',
+        provider: data.provider || (data.apiKey?.startsWith('sk-or-') ? 'openrouter' : data.apiKey?.startsWith('AIzaSy') ? 'google' : 'tokenharbor'),
+        model: data.model || '',
+        customBaseUrl: data.customBaseUrl || ''
+      };
     }
-    return { apiKey: '' };
+    return { apiKey: '', provider: 'tokenharbor', model: 'mimo-v2.5', customBaseUrl: '' };
   } catch (error) {
     console.error("Error getting AI settings: ", error);
-    return { apiKey: '' };
+    return { apiKey: '', provider: 'tokenharbor', model: 'mimo-v2.5', customBaseUrl: '' };
   }
 };
 
-export const updateAiSettings = async (apiKey) => {
+export const updateAiSettings = async (settingsOrApiKey, provider, model, customBaseUrl) => {
   try {
     const docRef = doc(db, "settings", "ai");
-    await setDoc(docRef, { apiKey: apiKey.trim() }, { merge: true });
+    let payload = {};
+    if (typeof settingsOrApiKey === 'object' && settingsOrApiKey !== null) {
+      payload = {
+        apiKey: (settingsOrApiKey.apiKey || '').trim(),
+        provider: settingsOrApiKey.provider || 'tokenharbor',
+        model: (settingsOrApiKey.model || '').trim(),
+        customBaseUrl: (settingsOrApiKey.customBaseUrl || '').trim()
+      };
+    } else {
+      payload = {
+        apiKey: (settingsOrApiKey || '').trim(),
+        provider: provider || 'tokenharbor',
+        model: (model || '').trim(),
+        customBaseUrl: (customBaseUrl || '').trim()
+      };
+    }
+    await setDoc(docRef, payload, { merge: true });
     return true;
   } catch (error) {
     console.error("Error updating AI settings: ", error);
@@ -618,8 +640,68 @@ export const updateAiSettings = async (apiKey) => {
   }
 };
 
-export const evaluateWithGemini = async (question, studentAnswer, answerKey, apiKey) => {
+// Fungsi pembantu mengekstrak JSON dari output AI secara kalis ralat
+export const parseAiJsonResponse = (rawText) => {
+  if (!rawText || typeof rawText !== 'string') return null;
+
+  // 1. Buang tag pemikiran (contoh: <think>...</think> dari model DeepSeek)
+  let clean = rawText.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+
+  // 2. Buang blok format markdown ```json dan ```
+  clean = clean.replace(/```json/gi, '').replace(/```/g, '').trim();
+
+  // 3. Ekstrak tepat dari kurungan pembuka objek '{' pertama hingga '}' terakhir
+  const firstBrace = clean.indexOf('{');
+  const lastBrace = clean.lastIndexOf('}');
+  if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+    clean = clean.substring(firstBrace, lastBrace + 1);
+  }
+
   try {
+    const parsed = JSON.parse(clean);
+    return {
+      isCorrect: Boolean(parsed.isCorrect),
+      score: typeof parsed.score === 'number' ? parsed.score : (parsed.isCorrect ? 10 : 0),
+      feedback: parsed.feedback || (parsed.isCorrect ? "Jawapan tepat dan jalan kerja jelas." : "Jawapan kurang tepat. Cuba teliti semula soalan.")
+    };
+  } catch (err) {
+    console.error("Gagal mengurai respons JSON AI:", err, "Teks mentah:", rawText);
+    return null;
+  }
+};
+
+export const evaluateWithGemini = async (question, studentAnswer, answerKey, apiKeyOrSettings) => {
+  try {
+    let apiKey = '';
+    let provider = '';
+    let model = '';
+    let customBaseUrl = '';
+
+    if (typeof apiKeyOrSettings === 'object' && apiKeyOrSettings !== null) {
+      apiKey = apiKeyOrSettings.apiKey || '';
+      provider = apiKeyOrSettings.provider || '';
+      model = apiKeyOrSettings.model || '';
+      customBaseUrl = apiKeyOrSettings.customBaseUrl || '';
+    } else if (typeof apiKeyOrSettings === 'string') {
+      apiKey = apiKeyOrSettings;
+    }
+
+    const cleanApiKey = (apiKey || '').trim();
+    if (!cleanApiKey) {
+      return null;
+    }
+
+    // Auto-detect provider jika tidak dinyatakan
+    if (!provider) {
+      if (cleanApiKey.startsWith("sk-or-")) {
+        provider = "openrouter";
+      } else if (cleanApiKey.startsWith("AIzaSy")) {
+        provider = "google";
+      } else {
+        provider = "tokenharbor";
+      }
+    }
+
     const prompt = `Anda adalah seorang guru matematik yang menyemak jawapan subjektif pelajar.
 Soalan: ${question}
 Skema Jawapan: ${answerKey}
@@ -638,69 +720,109 @@ Sila balas HANYA dalam format JSON yang sah seperti ini (tiada teks lain):
   "feedback": "Jawapan tepat dan jalan kerja jelas."
 }`;
 
-    let url, headers, body;
-    const cleanApiKey = apiKey.trim();
-    const isOpenRouter = cleanApiKey.startsWith("sk-or-");
-    const isGoogle = cleanApiKey.startsWith("AIzaSy");
-    const isOpenCodeGo = !isOpenRouter && !isGoogle;
-
-    let data;
-
-    if (isOpenCodeGo) {
-      // Call Firebase Cloud Function Proxy
-      const functions = getFunctions(app);
-      const proxyOpenCodeGo = httpsCallable(functions, 'proxyOpenCodeGo');
-      const result = await proxyOpenCodeGo({ prompt, apiKey: cleanApiKey });
-      data = result.data;
-    } else {
-      // Direct API Calls
-      if (isOpenRouter) {
-        url = "https://openrouter.ai/api/v1/chat/completions";
-        headers = {
-          "Authorization": `Bearer ${cleanApiKey}`,
-          "Content-Type": "application/json"
-        };
-        body = JSON.stringify({
-          model: "google/gemini-1.5-flash", 
-          messages: [{ role: "user", content: prompt }]
-        });
-      } else {
-        // Fallback for direct Google Gemini API Key
-        url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${cleanApiKey}`;
-        headers = { "Content-Type": "application/json" };
-        body = JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.1, responseMimeType: "application/json" }
-        });
-      }
-
+    if (provider === "google") {
+      // Panggilan terus ke Google Gemini
+      const geminiModel = model || "gemini-1.5-flash";
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${cleanApiKey}`;
       const response = await fetch(url, {
         method: 'POST',
-        headers,
-        body
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { temperature: 0.1, responseMimeType: "application/json" }
+        })
       });
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        console.error("AI API Error:", errorData);
-        throw new Error(`API Error: ${response.status} - ${errorData?.error?.message || 'Unknown Error'}`);
+        throw new Error(`Google API Error: ${response.status} - ${errorData?.error?.message || 'Unknown Error'}`);
       }
 
-      data = await response.json();
-    }
+      const data = await response.json();
+      const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+      return parseAiJsonResponse(rawText);
 
-    let textResult = "";
-    if (isOpenRouter || isOpenCodeGo) {
-      textResult = data.choices[0].message.content;
+    } else if (provider === "openrouter") {
+      // Panggilan terus ke OpenRouter
+      const routerModel = model || "google/gemini-1.5-flash";
+      const url = "https://openrouter.ai/api/v1/chat/completions";
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          "Authorization": `Bearer ${cleanApiKey}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          model: routerModel,
+          messages: [{ role: "user", content: prompt }],
+          temperature: 0.1
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(`OpenRouter Error: ${response.status} - ${errorData?.error?.message || 'Unknown Error'}`);
+      }
+
+      const data = await response.json();
+      const rawText = data?.choices?.[0]?.message?.content || "";
+      return parseAiJsonResponse(rawText);
+
     } else {
-      textResult = data.candidates[0].content.parts[0].text;
+      // Token Harbor, OpenCode Go, atau Custom - gunakan Firebase Cloud Function Proxy untuk mengatasi CORS
+      const functions = getFunctions(app);
+      let data;
+      try {
+        const proxyFunc = httpsCallable(functions, 'proxyAi');
+        const result = await proxyFunc({
+          prompt,
+          apiKey: cleanApiKey,
+          provider,
+          model,
+          baseUrl: customBaseUrl
+        });
+        data = result.data;
+      } catch (callErr) {
+        // Sandaran ke alias jika proxyAi belum dideploy
+        if (callErr.code === 'not-found' || callErr.message?.includes('not found')) {
+          const fallbackFunc = httpsCallable(functions, 'proxyTokenHarbor');
+          try {
+            const result = await fallbackFunc({
+              prompt,
+              apiKey: cleanApiKey,
+              provider,
+              model,
+              baseUrl: customBaseUrl
+            });
+            data = result.data;
+          } catch (fbErr) {
+            if (fbErr.code === 'not-found' || fbErr.message?.includes('not found')) {
+              const legacyFunc = httpsCallable(functions, 'proxyOpenCodeGo');
+              const result = await legacyFunc({
+                prompt,
+                apiKey: cleanApiKey,
+                provider,
+                model,
+                baseUrl: customBaseUrl
+              });
+              data = result.data;
+            } else {
+              throw fbErr;
+            }
+          }
+        } else {
+          throw callErr;
+        }
+      }
+
+      const rawText = data?.choices?.[0]?.message?.content || "";
+      return parseAiJsonResponse(rawText);
     }
-    
-    textResult = textResult.replace(/```json/g, '').replace(/```/g, '').trim();
-    
-    return JSON.parse(textResult);
   } catch (error) {
     console.error("Error evaluating with AI:", error);
+    if (error.code === 'functions/not-found') {
+      return { isCorrect: false, score: 0, feedback: "Fungsi Cloud Function 'proxyAi' belum dideploy ke Firebase. Sila jalankan 'firebase deploy --only functions'." };
+    }
     if (error.message && error.message.includes("429")) {
       return { isCorrect: false, score: 0, feedback: "Sistem AI sedang sibuk atau mencapai had kuota (Rate Limit). Sila tunggu sebentar sebelum mencuba lagi." };
     }
@@ -708,6 +830,22 @@ Sila balas HANYA dalam format JSON yang sah seperti ini (tiada teks lain):
       return { isCorrect: false, score: 0, feedback: "Kunci API (API Key) AI tidak sah, tamat tempoh, atau model tidak disokong." };
     }
     return null;
+  }
+};
+
+// Uji sambungan AI dari Dashboard Ibu Bapa
+export const testAiConnection = async (settings) => {
+  try {
+    const testQuestion = "Apakah hasil tambah 2 + 2?";
+    const studentAnswer = "4";
+    const answerKey = "4";
+    const res = await evaluateWithGemini(testQuestion, studentAnswer, answerKey, settings);
+    if (res && res.feedback) {
+      return { success: true, message: `Sambungan berjaya! Respons AI: "${res.feedback}" (Skor: ${res.score}/10)` };
+    }
+    return { success: false, message: "AI tidak mengembalikan maklum balas yang sah. Sila semak kunci API atau pastikan Cloud Function telah dideploy." };
+  } catch (error) {
+    return { success: false, message: `Ralat sambungan: ${error.message || 'Ralat tidak diketahui'}` };
   }
 };
 
